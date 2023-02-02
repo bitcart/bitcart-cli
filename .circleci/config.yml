@@ -1,0 +1,65 @@
+version: 2.1
+
+orbs:
+  bitcartcc: bitcartcc/bitcartcc-shared@1
+
+commands:
+  install-lint-dependencies:
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - v1-lint-dependencies-{{ .Branch }}
+
+      - run:
+          name: Install dependencies
+          command: |
+            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v1.51.0
+
+      - save_cache:
+          paths:
+            - /usr/local/bin/golangci-lint
+          key: v1-lint-dependencies-{{ .Branch }}
+
+jobs:
+  deploy:
+    docker:
+      - image: cimg/go:1.18
+
+    resource_class: large
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+          name: Build and publish Go CLI
+          command: |
+            cd cli
+            export VERSION="${CIRCLE_TAG#cli-}"
+            make build # ensure it works
+            make release ARGS="-ldflags '-X main.Version=$VERSION' -parallel=4"
+            go install github.com/tcnksm/ghr@latest
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -replace $CIRCLE_TAG dist/
+
+      - store_artifacts:
+          path: cli/dist
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - bitcartcc/lint:
+          name: lint
+          pre-steps:
+            - install-lint-dependencies
+
+      - deploy:
+          context: global
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /[0-9]+(\.[0-9]+)*/

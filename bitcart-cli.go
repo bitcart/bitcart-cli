@@ -189,7 +189,7 @@ func main() {
 	}
 	app.BashComplete = func(c *cli.Context) {
 		set := flag.NewFlagSet("app", 0)
-		set.Parse([]string{"help"})
+		checkErr(set.Parse([]string{"help"}))
 		output, _, err := runCommand(cli.NewContext(app, set, c))
 		if err != nil || output.Error != nil {
 			fmt.Println("plugin")
@@ -231,7 +231,7 @@ func main() {
 				return nil
 			}
 		} else {
-			cli.ShowAppHelp(c)
+			checkErr(cli.ShowAppHelp(c))
 		}
 		return nil
 	}
@@ -295,7 +295,6 @@ func main() {
 			},
 		},
 	}
-	godotenv.Load(envFile)
-	err := app.Run(os.Args)
-	checkErr(err)
+	checkErr(godotenv.Load(envFile))
+	checkErr(app.Run(os.Args))
 }

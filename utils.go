@@ -66,7 +66,8 @@ func removeBlankLines(reader io.Reader, writer io.Writer) {
 	for {
 		line, err := breader.ReadString('\n')
 		if !isBlank(line) {
-			bwriter.WriteString(line)
+			_, err := bwriter.WriteString(line)
+			checkErr(err)
 		}
 		if err != nil {
 			break
