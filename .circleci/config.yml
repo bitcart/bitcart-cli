@@ -54,9 +54,15 @@ jobs:
             make release ARGS="-ldflags '-X main.Version=$VERSION' -parallel=4"
             go install github.com/tcnksm/ghr@latest
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -replace $CIRCLE_TAG dist/
-            # build and publish docker image
+
+      - setup_remote_docker
+
+      - bitcartcc/login-to-dockerhub
+
+      - run:
+          name: Build and publish Docker image
+          command: |
             docker build -t bitcartcc/bitcart-cli:$VERSION .
-            docker login -u $DOCKER_USER -p $DOCKER_PASS
             docker push bitcartcc/bitcart-cli:$VERSION
 
       - store_artifacts:
