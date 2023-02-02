@@ -10,7 +10,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 	"github.com/ybbus/jsonrpc/v3"
 )
@@ -295,6 +294,5 @@ func main() {
 			},
 		},
 	}
-	checkErr(godotenv.Load(envFile))
 	checkErr(app.Run(os.Args))
 }

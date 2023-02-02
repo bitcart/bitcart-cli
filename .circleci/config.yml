@@ -12,6 +12,8 @@ executors:
         type: string
     docker:
       - image: cimg/go:<<parameters.version>>
+    environment:
+      CGO_ENABLED: 0
 
 commands:
   install-lint-dependencies:
@@ -47,15 +49,18 @@ jobs:
       - run:
           name: Build and publish Go CLI
           command: |
-            cd cli
-            export VERSION="${CIRCLE_TAG#cli-}"
-            make build # ensure it works
+            export VERSION="${CIRCLE_TAG}"
+            make build ARGS="-ldflags '-X main.Version=$VERSION'" # ensure it works
             make release ARGS="-ldflags '-X main.Version=$VERSION' -parallel=4"
             go install github.com/tcnksm/ghr@latest
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -replace $CIRCLE_TAG dist/
+            # build and publish docker image
+            docker build -t bitcartcc/bitcart-cli:$VERSION .
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker push bitcartcc/bitcart-cli:$VERSION
 
       - store_artifacts:
-          path: cli/dist
+          path: dist
 
 workflows:
   version: 2

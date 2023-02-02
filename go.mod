@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
-	github.com/joho/godotenv v1.4.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.2.0
 	github.com/urfave/cli/v2 v2.24.3
 	github.com/ybbus/jsonrpc/v3 v3.1.1
