@@ -3,6 +3,16 @@ version: 2.1
 orbs:
   bitcartcc: bitcartcc/bitcartcc-shared@1
 
+executors:
+  docker-go:
+    parameters:
+      version:
+        description: "Golang version"
+        default: "1.18"
+        type: string
+    docker:
+      - image: cimg/go:<<parameters.version>>
+
 commands:
   install-lint-dependencies:
     steps:
@@ -53,6 +63,8 @@ workflows:
     jobs:
       - bitcartcc/lint:
           name: lint
+          executor: docker-go
+          pre-commit-pip: false
           pre-steps:
             - install-lint-dependencies
 
