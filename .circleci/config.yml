@@ -64,6 +64,7 @@ workflows:
       - bitcartcc/lint:
           name: lint
           executor: docker-go
+          pre-commit-pip: false
           pre-steps:
             - install-lint-dependencies
 
