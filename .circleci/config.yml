@@ -3,18 +3,6 @@ version: 2.1
 orbs:
   bitcartcc: bitcartcc/bitcartcc-shared@1
 
-executors:
-  docker-go:
-    parameters:
-      version:
-        description: "Golang version"
-        default: "1.18"
-        type: string
-    docker:
-      - image: cimg/go:<<parameters.version>>
-    environment:
-      CGO_ENABLED: 0
-
 commands:
   install-lint-dependencies:
     steps:
@@ -36,8 +24,7 @@ commands:
 
 jobs:
   deploy:
-    docker:
-      - image: cimg/go:1.18
+    executor: bitcartcc/docker-go
 
     resource_class: large
 
@@ -51,19 +38,9 @@ jobs:
           command: |
             export VERSION="${CIRCLE_TAG}"
             make build ARGS="-ldflags '-X main.Version=$VERSION'" # ensure it works
-            make dist ARGS="-ldflags '-X main.Version=$VERSION' -parallel=4"
+            make release ARGS="-ldflags '-X main.Version=$VERSION' -parallel=4"
             go install github.com/tcnksm/ghr@latest
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -replace $CIRCLE_TAG dist/
-
-      - setup_remote_docker
-
-      - bitcartcc/login-to-dockerhub
-
-      - run:
-          name: Build and publish Docker image
-          command: |
-            docker build -t bitcartcc/bitcart-cli:$CIRCLE_TAG .
-            docker push bitcartcc/bitcart-cli:$CIRCLE_TAG
 
       - store_artifacts:
           path: dist
@@ -74,7 +51,7 @@ workflows:
     jobs:
       - bitcartcc/lint:
           name: lint
-          executor: docker-go
+          executor: bitcartcc/docker-go
           pre-commit-pip: false
           pre-steps:
             - install-lint-dependencies
