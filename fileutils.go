@@ -10,6 +10,7 @@ import (
 )
 
 func copyDirectory(scrDir, dest string) {
+	createIfNotExists(dest, 0755)
 	entries, err := os.ReadDir(scrDir)
 	checkErr(err)
 	for _, entry := range entries {
