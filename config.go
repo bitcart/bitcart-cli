@@ -18,6 +18,8 @@ type Config struct {
 	BitcartAdminDirectory  string `yaml:"bitcart_admin_directory"`
 	BitcartStoreDirectory  string `yaml:"bitcart_store_directory"`
 	BitcartDockerDirectory string `yaml:"bitcart_docker_directory"`
+	GitHubAPI              string `yaml:"-"`
+	SkipUpdateCheck        bool   `yaml:"-"`
 	FileUsed               string `yaml:"-"`
 }
 

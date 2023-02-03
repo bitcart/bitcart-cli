@@ -12,7 +12,6 @@ import (
 //go:embed plugin/*
 var pluginsData embed.FS
 
-var Version = "dev"
 var schemaURL = "https://bitcartcc.com/schemas/plugin/1.1.0/plugin.schema.json"
 
 var COINS = map[string]string{

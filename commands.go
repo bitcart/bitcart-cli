@@ -6,8 +6,10 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/briandowns/spinner"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/slices"
 )
@@ -351,5 +353,39 @@ func packagePlugin(c *cli.Context) error {
 	outPath := filepath.Join(path, manifest["name"].(string)+".bitcartcc")
 	createZip(path, outPath)
 	fmt.Println("Plugin packaged to", outPath)
+	return nil
+}
+
+func updateCLI(c *cli.Context) error {
+	slug := "bitcartcc/bitcart-cli"
+	spr := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+	spr.Suffix = " Checking for updates..."
+	spr.Start()
+	check, err := CheckForUpdates(
+		rootOptions.GitHubAPI,
+		slug,
+		Version,
+	)
+	spr.Stop()
+	checkErr(err)
+	if !check.Found {
+		fmt.Println("No updates found.")
+		return nil
+	}
+	if IsLatestVersion(check) {
+		fmt.Println("Already up-to-date.")
+		return nil
+	}
+	fmt.Println(ReportVersion(check))
+	if c.Command.Name == "check" {
+		fmt.Println(HowToUpdate(check))
+		return nil
+	}
+	spr.Suffix = " Installing update..."
+	spr.Restart()
+	message, err := InstallLatest(check)
+	spr.Stop()
+	checkErr(err)
+	fmt.Println(message)
 	return nil
 }

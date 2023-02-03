@@ -24,6 +24,7 @@ func getSpec(
 ) map[string]interface{} {
 	req, err := http.NewRequest("GET", endpoint+"/spec", nil)
 	checkErr(err)
+	req.Header.Add("User-Agent", UserAgent())
 	req.SetBasicAuth(user, password)
 	resp, err := client.Do(req)
 	checkErr(err)
@@ -69,6 +70,7 @@ func runCommand(c *cli.Context) (*jsonrpc.RPCResponse, map[string]interface{}, e
 			"Authorization": "Basic " + base64.StdEncoding.EncodeToString(
 				[]byte(user+":"+password),
 			),
+			"User-Agent": UserAgent(),
 		},
 	})
 	// some magic to make array with the last element being a dictionary with xpub in it
@@ -192,6 +194,28 @@ func main() {
 			Value:   false,
 			EnvVars: []string{"BITCART_NO_SPEC"},
 		},
+		&cli.StringFlag{
+			Name:        "github-api",
+			Value:       "https://api.github.com",
+			Usage:       "Change the default endpoint to GitHub API for retrieving updates",
+			Destination: &rootOptions.GitHubAPI,
+		},
+		&cli.BoolFlag{
+			Name:        "skip-update-check",
+			Usage:       "Skip the check for updates check run before every command.",
+			Value:       skipUpdateByDefault(),
+			Destination: &rootOptions.SkipUpdateCheck,
+		},
+	}
+	app.Before = func(c *cli.Context) error {
+		if c.Args().Get(0) == "update" {
+			return nil
+		}
+		err := checkForUpdates(rootOptions)
+		if err != nil {
+			fmt.Printf("Error checking for updates: %s\n", err)
+		}
+		return nil
 	}
 	app.BashComplete = func(c *cli.Context) {
 		set := flag.NewFlagSet("app", 0)
@@ -199,9 +223,15 @@ func main() {
 		output, _, err := runCommand(cli.NewContext(app, set, c))
 		if err != nil || output.Error != nil {
 			fmt.Println("plugin")
+			if updatesEnabled() {
+				fmt.Println("update")
+			}
 			return
 		}
 		output.Result = append(output.Result.([]interface{}), "plugin")
+		if updatesEnabled() {
+			output.Result = append(output.Result.([]interface{}), "update")
+		}
 		for _, v := range output.Result.([]interface{}) {
 			fmt.Println(v)
 		}
@@ -322,6 +352,24 @@ func main() {
 				},
 			},
 		},
+	}
+	if updatesEnabled() {
+		app.Commands = append(app.Commands, &cli.Command{
+			Name:  "update",
+			Usage: "CLI update operations",
+			Subcommands: []*cli.Command{
+				{
+					Name:   "check",
+					Action: updateCLI,
+					Usage:  "Check if there are any updates available",
+				},
+				{
+					Name:   "install",
+					Action: updateCLI,
+					Usage:  "Update the tool to the latest version",
+				},
+			},
+		})
 	}
 	checkErr(app.Run(os.Args))
 }
