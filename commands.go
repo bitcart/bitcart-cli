@@ -31,13 +31,14 @@ func initPlugin(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 	path := args.Get(0)
+	save := c.Bool("save")
 	path, err := filepath.Abs(path)
 	createIfNotExists(path, os.ModePerm)
 	checkErr(err)
 	answers := BasicCreatePluginAnswers{}
 	checkErr(survey.Ask(basicPluginCreate, &answers))
 	if slices.Contains(answers.ComponentTypes, "backend") {
-		var backendPath string
+		backendPath := getComponentConfigEntry("backend")
 		var componentName string
 		checkErr(
 			survey.AskOne(
@@ -48,16 +49,18 @@ func initPlugin(c *cli.Context) error {
 				survey.WithValidator(survey.Required),
 			),
 		)
-		checkErr(
-			survey.AskOne(
-				&survey.Input{Message: "Enter the path to cloned bitcart repository"},
-				&backendPath,
-				survey.WithValidator(survey.Required),
-				survey.WithValidator(directoryValidator),
-				survey.WithValidator(backendDirectoryValidator),
-			),
-		)
-		backendPath, err := filepath.Abs(backendPath)
+		if *backendPath == "" {
+			checkErr(
+				survey.AskOne(
+					&survey.Input{Message: "Enter the path to cloned bitcart repository"},
+					backendPath,
+					survey.WithValidator(survey.Required),
+					survey.WithValidator(directoryValidator),
+					survey.WithValidator(backendDirectoryValidator),
+				),
+			)
+		}
+		*backendPath, err = filepath.Abs(*backendPath)
 		checkErr(err)
 		internalPath := filepath.Join(path, "src/backend/"+componentName)
 		answers.FinalTypes = append(
@@ -78,13 +81,13 @@ func initPlugin(c *cli.Context) error {
 		safeSymlink(
 			internalPath,
 			filepath.Join(
-				backendPath,
+				*backendPath,
 				getOutputDirectory("backend", answers.Author, componentName),
 			),
 		)
 	}
 	if slices.Contains(answers.ComponentTypes, "docker") {
-		var dockerPath string
+		dockerPath := getComponentConfigEntry("docker")
 		var componentName string
 		checkErr(
 			survey.AskOne(
@@ -95,16 +98,18 @@ func initPlugin(c *cli.Context) error {
 				survey.WithValidator(survey.Required),
 			),
 		)
-		checkErr(
-			survey.AskOne(
-				&survey.Input{Message: "Enter the path to cloned bitcart-docker repository"},
-				&dockerPath,
-				survey.WithValidator(survey.Required),
-				survey.WithValidator(directoryValidator),
-				survey.WithValidator(dockerDirectoryValidator),
-			),
-		)
-		dockerPath, err := filepath.Abs(dockerPath)
+		if *dockerPath == "" {
+			checkErr(
+				survey.AskOne(
+					&survey.Input{Message: "Enter the path to cloned bitcart-docker repository"},
+					dockerPath,
+					survey.WithValidator(survey.Required),
+					survey.WithValidator(directoryValidator),
+					survey.WithValidator(dockerDirectoryValidator),
+				),
+			)
+		}
+		*dockerPath, err = filepath.Abs(*dockerPath)
 		checkErr(err)
 		internalPath := filepath.Join(path, "src/docker/"+componentName)
 		answers.FinalTypes = append(
@@ -115,14 +120,14 @@ func initPlugin(c *cli.Context) error {
 		safeSymlink(
 			internalPath,
 			filepath.Join(
-				dockerPath,
+				*dockerPath,
 				getOutputDirectory("docker", answers.Author, componentName),
 			),
 		)
 	}
 	for _, componentType := range []string{"admin", "store"} {
 		if slices.Contains(answers.ComponentTypes, componentType) {
-			var frontendPath string
+			frontendPath := getComponentConfigEntry(componentType)
 			var componentName string
 			checkErr(
 				survey.AskOne(
@@ -136,21 +141,23 @@ func initPlugin(c *cli.Context) error {
 					survey.WithValidator(survey.Required),
 				),
 			)
-			checkErr(
-				survey.AskOne(
-					&survey.Input{
-						Message: fmt.Sprintf(
-							"Enter the path to cloned %s frontend repository",
-							componentType,
-						),
-					},
-					&frontendPath,
-					survey.WithValidator(survey.Required),
-					survey.WithValidator(directoryValidator),
-					survey.WithValidator(frontendDirectoryValidator),
-				),
-			)
-			frontendPath, err := filepath.Abs(frontendPath)
+			if *frontendPath == "" {
+				checkErr(
+					survey.AskOne(
+						&survey.Input{
+							Message: fmt.Sprintf(
+								"Enter the path to cloned %s frontend repository",
+								componentType,
+							),
+						},
+						frontendPath,
+						survey.WithValidator(survey.Required),
+						survey.WithValidator(directoryValidator),
+						survey.WithValidator(frontendDirectoryValidator),
+					),
+				)
+			}
+			*frontendPath, err = filepath.Abs(*frontendPath)
 			checkErr(err)
 			answers.FinalTypes = append(
 				answers.FinalTypes,
@@ -189,7 +196,7 @@ func initPlugin(c *cli.Context) error {
 			safeSymlink(
 				internalPath,
 				filepath.Join(
-					frontendPath,
+					*frontendPath,
 					getOutputDirectory(componentType, answers.Author, componentName),
 				),
 			)
@@ -210,37 +217,38 @@ func initPlugin(c *cli.Context) error {
 		),
 	)
 	copyFileContents("plugin/.editorconfig", filepath.Join(path, ".editorconfig"))
+	if save {
+		rootOptions.WriteToDisk()
+	}
 	fmt.Println("Plugin created successfully")
 	return nil
 }
 
 type pluginMoveAction func(string, string)
 
-func pluginActionBase(path string, fn pluginMoveAction) {
+func pluginActionBase(path string, save bool, fn pluginMoveAction) {
 	path, err := filepath.Abs(path)
 	checkErr(err)
 	manifest := readManifest(path).(map[string]interface{})
-	paths := make(map[string]interface{})
 	iterateInstallations(path, manifest, func(componentPath, componentName, installType string) {
-		if _, ok := paths[installType]; !ok {
-			checkErr(survey.Ask([]*survey.Question{
-				{
-					Name: installType,
-					Prompt: &survey.Input{
-						Message: fmt.Sprintf(
-							"Enter the path to cloned %s repository",
-							componentData[installType].(map[string]interface{})["name"].(string),
-						),
-					},
-				},
-			}, &paths, survey.WithValidator(survey.Required), survey.WithValidator(directoryValidator), componentData[installType].(map[string]interface{})["validator"].(survey.AskOpt)))
+		toSave := getComponentConfigEntry(installType)
+		if *toSave == "" {
+			checkErr(survey.AskOne(&survey.Input{
+				Message: fmt.Sprintf(
+					"Enter the path to cloned %s repository",
+					componentData[installType].(map[string]interface{})["name"].(string),
+				),
+			}, toSave, survey.WithValidator(survey.Required), survey.WithValidator(directoryValidator), componentData[installType].(map[string]interface{})["validator"].(survey.AskOpt)))
 		}
 		finalPath := filepath.Join(
-			paths[installType].(string),
+			*toSave,
 			getOutputDirectory(installType, manifest["author"].(string), componentName),
 		)
 		fn(componentPath, finalPath)
 	})
+	if save {
+		rootOptions.WriteToDisk()
+	}
 }
 
 func installPlugin(c *cli.Context) error {
@@ -250,7 +258,8 @@ func installPlugin(c *cli.Context) error {
 	}
 	path := args.Get(0)
 	isDev := c.Bool("dev") || args.Get(1) == "--dev" || args.Get(1) == "-D"
-	pluginActionBase(path, func(componentPath, finalPath string) {
+	save := c.Bool("save")
+	pluginActionBase(path, save, func(componentPath, finalPath string) {
 		checkErr(os.RemoveAll(finalPath))
 		if !isDev {
 			copyDirectory(componentPath, finalPath)
@@ -267,7 +276,8 @@ func uninstallPlugin(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 	path := args.Get(0)
-	pluginActionBase(path, func(componentPath, finalPath string) {
+	save := c.Bool("save")
+	pluginActionBase(path, save, func(componentPath, finalPath string) {
 		checkErr(os.RemoveAll(finalPath))
 	})
 	return nil

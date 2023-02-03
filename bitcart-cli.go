@@ -14,6 +14,8 @@ import (
 	"github.com/ybbus/jsonrpc/v3"
 )
 
+var rootOptions *Config
+
 func getSpec(
 	client *http.Client,
 	endpoint string,
@@ -112,6 +114,11 @@ func runCommand(c *cli.Context) (*jsonrpc.RPCResponse, map[string]interface{}, e
 }
 
 func main() {
+	rootOptions = &Config{
+		// Token: "",
+		// Host:  "https://api.bitcartcc.com",
+	}
+	rootOptions.Load()
 	app := cli.NewApp()
 	app.Name = "bitcart-cli"
 	app.Version = Version
@@ -244,6 +251,14 @@ func main() {
 					Action:    initPlugin,
 					Usage:     "Create a new plugin",
 					UsageText: "bitcart-cli plugin init <path>",
+					Flags: []cli.Flag{
+						&cli.BoolFlag{
+							Name:    "save",
+							Aliases: []string{"s"},
+							Usage:   "Save repository directories to not ask later",
+							Value:   false,
+						},
+					},
 				},
 				{
 					Name:      "install",
@@ -257,6 +272,12 @@ func main() {
 							Value:   false,
 							Aliases: []string{"D"},
 						},
+						&cli.BoolFlag{
+							Name:    "save",
+							Aliases: []string{"s"},
+							Usage:   "Save repository directories to not ask later",
+							Value:   false,
+						},
 					},
 				},
 				{
@@ -264,6 +285,14 @@ func main() {
 					Action:    uninstallPlugin,
 					Usage:     "Uninstall a plugin",
 					UsageText: "bitcart-cli plugin uninstall <path>",
+					Flags: []cli.Flag{
+						&cli.BoolFlag{
+							Name:    "save",
+							Aliases: []string{"s"},
+							Usage:   "Save repository directories to not ask later",
+							Value:   false,
+						},
+					},
 				},
 				{
 					Name:      "validate",

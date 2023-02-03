@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 	"unicode"
@@ -99,14 +100,24 @@ func prepareSchema(url string) *jsonschema.Schema {
 	schemaVersion := parseVersionFromURL(url)
 	version, versionErr := ioutil.ReadFile(versionFile)
 	if statResult, err := os.Stat(schemaPath); os.IsNotExist(err) ||
-		time.Since(statResult.ModTime().AddDate(0, 0, 7)) > time.Since(time.Now()) || (versionErr == nil && string(version) != schemaVersion) {
+		time.Since(
+			statResult.ModTime().AddDate(0, 0, 7),
+		) > time.Since(
+			time.Now(),
+		) || (versionErr == nil && string(version) != schemaVersion) {
 		resp, err := http.Get(url)
 		checkErr(err)
 		defer resp.Body.Close()
 		data, err := ioutil.ReadAll(resp.Body)
 		checkErr(err)
 		checkErr(ioutil.WriteFile(schemaPath, data, os.ModePerm))
-		checkErr(ioutil.WriteFile(filepath.Join(cacheDir, "schema.version"), []byte(schemaVersion), os.ModePerm))
+		checkErr(
+			ioutil.WriteFile(
+				filepath.Join(cacheDir, "schema.version"),
+				[]byte(schemaVersion),
+				os.ModePerm,
+			),
+		)
 	}
 	sch, err := jsonschema.Compile(schemaPath)
 	checkErr(err)
@@ -142,4 +153,37 @@ func iterateInstallations(path string, manifest map[string]interface{}, fn insta
 		installType := installData["type"].(string)
 		fn(componentPath, componentName, installType)
 	}
+}
+
+func setField(v interface{}, name string, value string) {
+	rv := reflect.ValueOf(v)
+	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
+		exitErr("v must be pointer to struct")
+	}
+	rv = rv.Elem()
+	fv := rv.FieldByName(name)
+	if !fv.IsValid() {
+		exitErr(fmt.Sprintf("not a field name: %s", name))
+	}
+	if !fv.CanSet() {
+		exitErr(fmt.Sprintf("cannot set field %s", name))
+	}
+	if fv.Kind() != reflect.String {
+		exitErr(fmt.Sprintf("%s is not a string field", name))
+	}
+	fv.SetString(value)
+}
+
+func getComponentConfigEntry(componentType string) *string {
+	switch componentType {
+	case "backend":
+		return &rootOptions.BitcartDirectory
+	case "admin":
+		return &rootOptions.BitcartAdminDirectory
+	case "store":
+		return &rootOptions.BitcartStoreDirectory
+	case "docker":
+		return &rootOptions.BitcartDockerDirectory
+	}
+	return nil
 }

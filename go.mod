@@ -8,6 +8,7 @@ require (
 	github.com/urfave/cli/v2 v2.24.3
 	github.com/ybbus/jsonrpc/v3 v3.1.1
 	golang.org/x/exp v0.0.0-20230202163644-54bba9f4231b
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
