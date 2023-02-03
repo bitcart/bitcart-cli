@@ -37,3 +37,6 @@ require (
 	golang.org/x/text v0.3.5 // indirect
 	google.golang.org/appengine v1.3.0 // indirect
 )
+
+// update to a patched version of yaml.v2
+replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.4.0
