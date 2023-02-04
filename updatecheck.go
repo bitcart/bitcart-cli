@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bitcartcc/go-github-selfupdate/selfupdate"
 	"github.com/blang/semver"
 	"github.com/briandowns/spinner"
-	"github.com/rhysd/go-github-selfupdate/selfupdate"
 )
 
 type Options struct {
