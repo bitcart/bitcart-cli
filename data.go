@@ -13,6 +13,7 @@ import (
 var pluginsData embed.FS
 
 var schemaURL = "https://bitcartcc.com/schemas/plugin/1.1.0/plugin.schema.json"
+var envFile = "../conf/.env"
 
 var COINS = map[string]string{
 	"btc":   "5000",

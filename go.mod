@@ -7,6 +7,7 @@ require (
 	github.com/bitcartcc/go-github-selfupdate v0.0.0-20230204165021-f3bb194eb86e
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/briandowns/spinner v1.21.0
+	github.com/joho/godotenv v1.5.1
 	github.com/santhosh-tekuri/jsonschema/v5 v5.2.0
 	github.com/urfave/cli/v2 v2.24.3
 	github.com/ybbus/jsonrpc/v3 v3.1.1
