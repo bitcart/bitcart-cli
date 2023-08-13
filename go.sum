@@ -2,8 +2,8 @@ github.com/AlecAivazis/survey/v2 v2.3.6 h1:NvTuVHISgTHEHeBFqt6BHOe4Ny/NwGZr7w+F8
 github.com/AlecAivazis/survey/v2 v2.3.6/go.mod h1:4AuI9b7RjAR+G7v9+C4YSlX/YL3K3cWNXgWXOhllqvI=
 github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2 h1:+vx7roKuyA63nhn5WAunQHLTznkw5W8b1Xc0dNjp83s=
 github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2/go.mod h1:HBCaDeC1lPdgDeDbhX8XFpy1jqjK0IBG8W5K+xYqA0w=
-github.com/bitcartcc/go-github-selfupdate v0.0.0-20230204165021-f3bb194eb86e h1:2vaL4pcuGi6VgWXi4dAOKQ9mzMBz26ZOdJXdjx9P+as=
-github.com/bitcartcc/go-github-selfupdate v0.0.0-20230204165021-f3bb194eb86e/go.mod h1:6abyx1hkOpX5w2NpuAbgO6udHQGrcRwBL/xEURly6+k=
+github.com/bitcart/go-github-selfupdate v0.0.0-20230813225846-d9f4468b9beb h1:tqL6Vsx2WKyrSPWvXXoHAuKooHgOcCe8L8jUFOiCPpA=
+github.com/bitcart/go-github-selfupdate v0.0.0-20230813225846-d9f4468b9beb/go.mod h1:OSBuuBLXqOTv6J5gDbQT3vK7nTEWvBfjouejsdwdSPk=
 github.com/blang/semver v3.5.1+incompatible h1:cQNTCjp13qL8KC3Nbxr/y2Bqb63oX6wdnnjpJbkM4JQ=
 github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
 github.com/briandowns/spinner v1.21.0 h1:2lVBzf3iZ3cT/ulVXljc4BzlL3yTWZDzsGsamI7si+A=

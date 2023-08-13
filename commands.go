@@ -350,14 +350,14 @@ func packagePlugin(c *cli.Context) error {
 		}
 		checkErr(filepath.Walk(path, walker))
 	}
-	outPath := filepath.Join(path, manifest["name"].(string)+".bitcartcc")
+	outPath := filepath.Join(path, manifest["name"].(string)+".bitcart")
 	createZip(path, outPath)
 	fmt.Println("Plugin packaged to", outPath)
 	return nil
 }
 
 func updateCLI(c *cli.Context) error {
-	slug := "bitcartcc/bitcart-cli"
+	slug := "bitcart/bitcart-cli"
 	spr := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	spr.Suffix = " Checking for updates..."
 	spr.Start()

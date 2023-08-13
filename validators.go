@@ -25,7 +25,7 @@ func directoryValidator(val interface{}) error {
 func backendDirectoryValidator(val interface{}) error {
 	if !validateFileExists(filepath.Join(val.(string), "gunicorn.conf.py")) {
 		return errors.New(
-			"Directory does not look to be a cloned https://github.com/bitcartcc/bitcart repository",
+			"Directory does not look to be a cloned https://github.com/bitcart/bitcart repository",
 		)
 	}
 	return nil
@@ -34,7 +34,7 @@ func backendDirectoryValidator(val interface{}) error {
 func dockerDirectoryValidator(val interface{}) error {
 	if !validateFileExists(filepath.Join(val.(string), "setup.sh")) {
 		return errors.New(
-			"Directory does not look to be a cloned https://github.com/bitcartcc/bitcart-docker repository",
+			"Directory does not look to be a cloned https://github.com/bitcart/bitcart-docker repository",
 		)
 	}
 	return nil

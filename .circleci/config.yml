@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  bitcartcc: bitcartcc/bitcartcc-shared@1
+  bitcart: bitcart/bitcart-shared@2
 
 commands:
   install-lint-dependencies:
@@ -24,7 +24,7 @@ commands:
 
 jobs:
   deploy:
-    executor: bitcartcc/docker-go
+    executor: bitcart/docker-go
 
     resource_class: large
 
@@ -49,9 +49,9 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - bitcartcc/lint:
+      - bitcart/lint:
           name: lint
-          executor: bitcartcc/docker-go
+          executor: bitcart/docker-go
           pre-commit-pip: false
           pre-steps:
             - install-lint-dependencies

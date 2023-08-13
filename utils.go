@@ -88,7 +88,7 @@ func getCacheDir() string {
 func parseVersionFromURL(url string) string {
 	parts := strings.Split(url, "/")
 	if len(parts) < 2 {
-		exitErr("Invalid version string provided. Only bitcartcc-hosted schema URLs are supported")
+		exitErr("Invalid version string provided. Only bitcart-hosted schema URLs are supported")
 	}
 	return parts[len(parts)-2]
 }

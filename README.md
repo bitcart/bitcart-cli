@@ -1,6 +1,6 @@
-# BitcartCC CLI
+# Bitcart CLI
 
-To install autocomplete, download it from [here](https://raw.githubusercontent.com/bitcartcc/bitcart-docker/master/compose/scripts/cli-autocomplete.sh)
+To install autocomplete, download it from [here](https://raw.githubusercontent.com/bitcart/bitcart-docker/master/compose/scripts/cli-autocomplete.sh)
 
 ```bash
 PROG=bitcart-cli source cli-autocomplete.sh

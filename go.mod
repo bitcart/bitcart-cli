@@ -1,10 +1,10 @@
-module github.com/bitcartcc/bitcart-cli
+module github.com/bitcart/bitcart-cli
 
 go 1.18
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
-	github.com/bitcartcc/go-github-selfupdate v0.0.0-20230204165021-f3bb194eb86e
+	github.com/bitcart/go-github-selfupdate v0.0.0-20230813225846-d9f4468b9beb
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/briandowns/spinner v1.21.0
 	github.com/joho/godotenv v1.5.1

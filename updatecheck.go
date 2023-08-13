@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitcartcc/go-github-selfupdate/selfupdate"
+	"github.com/bitcart/go-github-selfupdate/selfupdate"
 	"github.com/blang/semver"
 	"github.com/briandowns/spinner"
 )
@@ -50,7 +50,7 @@ func checkForUpdates(opts *Config) error {
 	updateCheck.Load()
 	if ShouldCheckForUpdates(updateCheck) {
 		log := log.New(os.Stderr, "", 0)
-		slug := "bitcartcc/bitcart-cli"
+		slug := "bitcart/bitcart-cli"
 		spr := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 		spr.Writer = os.Stderr
 		spr.Suffix = " Checking for updates..."
