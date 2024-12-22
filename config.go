@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -32,7 +31,7 @@ func (upd *UpdateCheck) Load() {
 	path := filepath.Join(SettingsPath(), updateCheckFilename())
 	ensureSettingsFileExists(path)
 	upd.FileUsed = path
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	checkErr(err)
 	checkErr(yaml.Unmarshal(content, &upd))
 }
@@ -40,7 +39,7 @@ func (upd *UpdateCheck) Load() {
 func (upd *UpdateCheck) WriteToDisk() {
 	enc, err := yaml.Marshal(&upd)
 	checkErr(err)
-	checkErr(ioutil.WriteFile(upd.FileUsed, enc, 0600))
+	checkErr(os.WriteFile(upd.FileUsed, enc, 0600))
 }
 
 func (cfg *Config) Load() {
@@ -52,7 +51,7 @@ func (cfg *Config) LoadFromDisk() {
 	path := filepath.Join(SettingsPath(), configFilename())
 	ensureSettingsFileExists(path)
 	cfg.FileUsed = path
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	checkErr(err)
 	checkErr(yaml.Unmarshal(content, &cfg))
 }
@@ -60,7 +59,7 @@ func (cfg *Config) LoadFromDisk() {
 func (cfg *Config) WriteToDisk() {
 	enc, err := yaml.Marshal(&cfg)
 	checkErr(err)
-	checkErr(ioutil.WriteFile(cfg.FileUsed, enc, 0600))
+	checkErr(os.WriteFile(cfg.FileUsed, enc, 0600))
 }
 
 func (cfg *Config) LoadFromEnv(prefix string) {

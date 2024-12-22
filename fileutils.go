@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -37,7 +36,7 @@ func copyDirectory(scrDir, dest string) {
 }
 
 func copyFile(src, dest string) {
-	data, err := ioutil.ReadFile(src)
+	data, err := os.ReadFile(src)
 	checkErr(err)
 	copyData(data, dest)
 }

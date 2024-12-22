@@ -15,7 +15,7 @@ commands:
       - run:
           name: Install dependencies
           command: |
-            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b /usr/local/bin v1.51.0
+            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b /usr/local/bin v1.62.2
 
       - save_cache:
           paths:
@@ -36,11 +36,7 @@ jobs:
       - run:
           name: Build and publish Go CLI
           command: |
-            export VERSION="${CIRCLE_TAG}"
-            make build ARGS="-ldflags '-X main.Version=$VERSION'" # ensure it works
-            make release ARGS="-ldflags '-X main.Version=$VERSION' -parallel=4"
-            go install github.com/tcnksm/ghr@latest
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -replace $CIRCLE_TAG dist/
+            curl -sfL https://goreleaser.com/static/run | bash
 
       - store_artifacts:
           path: dist

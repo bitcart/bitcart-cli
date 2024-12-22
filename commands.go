@@ -1,8 +1,8 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/briandowns/spinner"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"golang.org/x/exp/slices"
 )
 
@@ -27,13 +27,13 @@ type BasicCreatePluginAnswers struct {
 	FinalTypes     []ComponentType
 }
 
-func initPlugin(c *cli.Context) error {
-	args := c.Args()
+func initPlugin(ctx context.Context, cmd *cli.Command) error {
+	args := cmd.Args()
 	if args.Len() < 1 {
-		return cli.ShowSubcommandHelp(c)
+		return cli.ShowSubcommandHelp(cmd)
 	}
 	path := args.Get(0)
-	save := c.Bool("save")
+	save := cmd.Bool("save")
 	path, err := filepath.Abs(path)
 	createIfNotExists(path, os.ModePerm)
 	checkErr(err)
@@ -74,7 +74,7 @@ func initPlugin(c *cli.Context) error {
 		}{Name: componentName}
 		createIfNotExists(internalPath, os.ModePerm)
 		checkErr(
-			ioutil.WriteFile(
+			os.WriteFile(
 				filepath.Join(internalPath, "plugin.py"),
 				executeTemplate("plugin/src/backend/plugin.py.tmpl", data, false),
 				os.ModePerm,
@@ -182,14 +182,14 @@ func initPlugin(c *cli.Context) error {
 				Name   string
 			}{Author: answers.Author, Name: componentName}
 			checkErr(
-				ioutil.WriteFile(
+				os.WriteFile(
 					filepath.Join(internalPath, "package.json"),
 					executeTemplate("plugin/src/frontend/package.json.tmpl", data, false),
 					os.ModePerm,
 				),
 			)
 			checkErr(
-				ioutil.WriteFile(
+				os.WriteFile(
 					filepath.Join(internalPath, "config/index.js"),
 					executeTemplate("plugin/src/frontend/config/index.js.tmpl", data, false),
 					os.ModePerm,
@@ -205,14 +205,14 @@ func initPlugin(c *cli.Context) error {
 		}
 	}
 	checkErr(
-		ioutil.WriteFile(
+		os.WriteFile(
 			filepath.Join(path, "manifest.json"),
 			executeTemplate("plugin/manifest.json.tmpl", answers, true),
 			os.ModePerm,
 		),
 	)
 	checkErr(
-		ioutil.WriteFile(
+		os.WriteFile(
 			filepath.Join(path, ".gitignore"),
 			executeTemplate("plugin/.gitignore.tmpl", answers, true),
 			os.ModePerm,
@@ -253,14 +253,14 @@ func pluginActionBase(path string, save bool, fn pluginMoveAction) {
 	}
 }
 
-func installPlugin(c *cli.Context) error {
-	args := c.Args()
+func installPlugin(ctx context.Context, cmd *cli.Command) error {
+	args := cmd.Args()
 	if args.Len() < 1 {
-		return cli.ShowSubcommandHelp(c)
+		return cli.ShowSubcommandHelp(cmd)
 	}
 	path := args.Get(0)
-	isDev := c.Bool("dev") || args.Get(1) == "--dev" || args.Get(1) == "-D"
-	save := c.Bool("save")
+	isDev := cmd.Bool("dev") || args.Get(1) == "--dev" || args.Get(1) == "-D"
+	save := cmd.Bool("save")
 	pluginActionBase(path, save, func(componentPath, finalPath string) {
 		checkErr(os.RemoveAll(finalPath))
 		if !isDev {
@@ -272,28 +272,28 @@ func installPlugin(c *cli.Context) error {
 	return nil
 }
 
-func uninstallPlugin(c *cli.Context) error {
-	args := c.Args()
+func uninstallPlugin(ctx context.Context, cmd *cli.Command) error {
+	args := cmd.Args()
 	if args.Len() < 1 {
-		return cli.ShowSubcommandHelp(c)
+		return cli.ShowSubcommandHelp(cmd)
 	}
 	path := args.Get(0)
-	save := c.Bool("save")
+	save := cmd.Bool("save")
 	pluginActionBase(path, save, func(componentPath, finalPath string) {
 		checkErr(os.RemoveAll(finalPath))
 	})
 	return nil
 }
 
-func validatePlugin(c *cli.Context) error {
-	args := c.Args()
+func validatePlugin(ctx context.Context, cmd *cli.Command) error {
+	args := cmd.Args()
 	if args.Len() < 1 {
-		return cli.ShowSubcommandHelp(c)
+		return cli.ShowSubcommandHelp(cmd)
 	}
 	path := args.Get(0)
 	url := args.Get(2) // after --schema part
 	if url == "" {
-		url = c.String("schema")
+		url = cmd.String("schema")
 	}
 	sch := prepareSchema(url)
 	manifest := readManifest(path)
@@ -324,14 +324,14 @@ func validatePlugin(c *cli.Context) error {
 	return nil
 }
 
-func packagePlugin(c *cli.Context) error {
-	args := c.Args()
+func packagePlugin(ctx context.Context, cmd *cli.Command) error {
+	args := cmd.Args()
 	if args.Len() < 1 {
-		return cli.ShowSubcommandHelp(c)
+		return cli.ShowSubcommandHelp(cmd)
 	}
 	path := args.Get(0)
 	manifest := readManifest(path).(map[string]interface{})
-	noStrip := c.Bool("no-strip") || args.Get(1) == "--no-strip"
+	noStrip := cmd.Bool("no-strip") || args.Get(1) == "--no-strip"
 	if !noStrip {
 		walker := func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -356,7 +356,7 @@ func packagePlugin(c *cli.Context) error {
 	return nil
 }
 
-func updateCLI(c *cli.Context) error {
+func updateCLI(ctx context.Context, cmd *cli.Command) error {
 	slug := "bitcart/bitcart-cli"
 	spr := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	spr.Suffix = " Checking for updates..."
@@ -377,7 +377,7 @@ func updateCLI(c *cli.Context) error {
 		return nil
 	}
 	fmt.Println(ReportVersion(check))
-	if c.Command.Name == "check" {
+	if cmd.Name == "check" { // TODO: test
 		fmt.Println(HowToUpdate(check))
 		return nil
 	}

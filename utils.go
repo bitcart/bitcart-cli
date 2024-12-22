@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -98,7 +97,7 @@ func prepareSchema(url string) *jsonschema.Schema {
 	schemaPath := filepath.Join(cacheDir, "plugin.schema.json")
 	versionFile := filepath.Join(cacheDir, "schema.version")
 	schemaVersion := parseVersionFromURL(url)
-	version, versionErr := ioutil.ReadFile(versionFile)
+	version, versionErr := os.ReadFile(versionFile)
 	if statResult, err := os.Stat(schemaPath); os.IsNotExist(err) ||
 		time.Since(
 			statResult.ModTime().AddDate(0, 0, 7),
@@ -108,11 +107,11 @@ func prepareSchema(url string) *jsonschema.Schema {
 		resp, err := http.Get(url)
 		checkErr(err)
 		defer resp.Body.Close()
-		data, err := ioutil.ReadAll(resp.Body)
+		data, err := io.ReadAll(resp.Body)
 		checkErr(err)
-		checkErr(ioutil.WriteFile(schemaPath, data, os.ModePerm))
+		checkErr(os.WriteFile(schemaPath, data, os.ModePerm))
 		checkErr(
-			ioutil.WriteFile(
+			os.WriteFile(
 				filepath.Join(cacheDir, "schema.version"),
 				[]byte(schemaVersion),
 				os.ModePerm,
@@ -126,7 +125,7 @@ func prepareSchema(url string) *jsonschema.Schema {
 
 func readManifest(path string) interface{} {
 	manifestPath := filepath.Join(path, "manifest.json")
-	data, err := ioutil.ReadFile(manifestPath)
+	data, err := os.ReadFile(manifestPath)
 	checkErr(err)
 	var manifest interface{}
 	checkErr(json.Unmarshal(data, &manifest))
