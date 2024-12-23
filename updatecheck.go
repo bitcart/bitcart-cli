@@ -148,7 +148,7 @@ func IsLatestVersion(opts *Options) bool {
 	if opts.Current.String() == "" || opts.Latest == nil {
 		return true
 	}
-	return opts.Latest.Version.Equals(opts.Current)
+	return opts.Current.GE(opts.Latest.Version)
 }
 
 func ReportVersion(opts *Options) string {

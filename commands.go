@@ -332,18 +332,14 @@ func packagePlugin(ctx context.Context, cmd *cli.Command) error {
 	path := args.Get(0)
 	manifest := readManifest(path).(map[string]interface{})
 	noStrip := cmd.Bool("no-strip") || args.Get(1) == "--no-strip"
+	checkExcludeGitignore, err := rejectGitignored([]string{path})
+	checkErr(err)
 	if !noStrip {
 		walker := func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return nil
 			}
-			if info.IsDir() {
-				if info.Name() == "node_modules" || info.Name() == "__pycache__" {
-					return os.RemoveAll(path)
-				}
-				return nil
-			}
-			if info.Name() == "yarn.lock" || info.Name() == "package-lock.json" {
+			if checkExcludeGitignore(path) {
 				return os.RemoveAll(path)
 			}
 			return nil
@@ -377,7 +373,7 @@ func updateCLI(ctx context.Context, cmd *cli.Command) error {
 		return nil
 	}
 	fmt.Println(ReportVersion(check))
-	if cmd.Name == "check" { // TODO: test
+	if cmd.Name == "check" {
 		fmt.Println(HowToUpdate(check))
 		return nil
 	}

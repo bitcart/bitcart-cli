@@ -20,3 +20,4 @@ modules/*
 venv
 .prettiercache
 dist/
+.DS_Store
