@@ -12,7 +12,7 @@ import (
 //go:embed plugin/*
 var pluginsData embed.FS
 
-var schemaURL = "https://bitcart.ai/schemas/plugin/1.2.0/plugin.schema.json"
+var schemaURL = "https://bitcart.ai/schemas/plugin/1.3.0/plugin.schema.json"
 var envFile = "../conf/.env"
 
 var COINS = map[string]string{
