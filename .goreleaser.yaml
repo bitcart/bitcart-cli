@@ -25,6 +25,12 @@ builds:
     ldflags:
       - -s -w -X main.Version={{.Version}}
 
+release:
+  name_template: "Bitcart CLI v{{.Version}}"
+
+checksum:
+  name_template: "{{ .ProjectName }}-{{ .Version }}-checksums.txt"
+
 archives:
   - format: binary
     name_template: >-
