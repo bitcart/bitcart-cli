@@ -11,8 +11,6 @@ import (
 )
 
 type Config struct {
-	// Host                   string `yaml:"host"`
-	// Token                  string `yaml:"token"`
 	BitcartDirectory       string `yaml:"bitcart_directory"`
 	BitcartAdminDirectory  string `yaml:"bitcart_admin_directory"`
 	BitcartStoreDirectory  string `yaml:"bitcart_store_directory"`

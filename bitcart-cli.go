@@ -123,10 +123,7 @@ func runCommand(c *cli.Command, help bool) (*jsonrpc.RPCResponse, map[string]int
 }
 
 func main() {
-	rootOptions = &Config{
-		// Token: "",
-		// Host:  "https://api.bitcart.ai",
-	}
+	rootOptions = &Config{}
 	rootOptions.Load()
 	app := &cli.Command{
 		Name:                  "bitcart-cli",
