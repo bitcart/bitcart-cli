@@ -87,11 +87,11 @@ func runCommand(c *cli.Command, help bool) (*jsonrpc.RPCResponse, map[string]int
 			"diskless": diskless,
 		},
 	}
-	acceptFlags := true
+	acceptFlags := false
 	i := 0
 	for i < len(sl) {
 		if sl[i] == "--" {
-			acceptFlags = false
+			acceptFlags = true
 			i += 1
 		}
 		if strings.HasPrefix(sl[i], "--") && acceptFlags {
