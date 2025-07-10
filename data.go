@@ -22,7 +22,6 @@ var COINS = map[string]string{
 	"bch":   "5004",
 	"xrg":   "5005",
 	"bnb":   "5006",
-	"sbch":  "5007",
 	"matic": "5008",
 	"trx":   "5009",
 	"grs":   "5010",
