@@ -19,7 +19,6 @@ var COINS = map[string]string{
 	"btc":   "5000",
 	"ltc":   "5001",
 	"eth":   "5002",
-	"bsty":  "5003",
 	"bch":   "5004",
 	"xrg":   "5005",
 	"bnb":   "5006",
