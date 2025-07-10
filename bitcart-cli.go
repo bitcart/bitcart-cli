@@ -87,14 +87,9 @@ func runCommand(c *cli.Command, help bool) (*jsonrpc.RPCResponse, map[string]int
 			"diskless": diskless,
 		},
 	}
-	acceptFlags := false
 	i := 0
 	for i < len(sl) {
-		if sl[i] == "--" {
-			acceptFlags = true
-			i += 1
-		}
-		if strings.HasPrefix(sl[i], "--") && acceptFlags {
+		if strings.HasPrefix(sl[i], "--") {
 			if i+1 >= len(sl) {
 				exitErr("Error: missing value for flag " + sl[i])
 			}
