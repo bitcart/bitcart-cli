@@ -27,6 +27,49 @@ type BasicCreatePluginAnswers struct {
 	FinalTypes     []ComponentType
 }
 
+func createInitPyFile(dir string) {
+	createIfNotExists(dir, os.ModePerm)
+	initPyPath := filepath.Join(dir, "__init__.py")
+	if !exists(initPyPath) {
+		checkErr(os.WriteFile(initPyPath, []byte(""), os.ModePerm))
+	}
+}
+
+func removeOrgInitIfNoPlugins(orgPath string) {
+	entries, err := os.ReadDir(orgPath)
+	if err != nil {
+		return
+	}
+	hasPluginDirs := false
+	for _, e := range entries {
+		name := e.Name()
+		if name == "__pycache__" || name == "__init__.py" {
+			continue
+		}
+		fi, statErr := e.Info()
+		if statErr != nil {
+			hasPluginDirs = true
+			break
+		}
+		mode := fi.Mode()
+		if mode.IsDir() || (mode&os.ModeSymlink != 0) {
+			hasPluginDirs = true
+			break
+		}
+	}
+	if hasPluginDirs {
+		return
+	}
+	pycachePath := filepath.Join(orgPath, "__pycache__")
+	if exists(pycachePath) {
+		checkErr(os.RemoveAll(pycachePath))
+	}
+	initPy := filepath.Join(orgPath, "__init__.py")
+	if exists(initPy) {
+		checkErr(os.Remove(initPy))
+	}
+}
+
 func initPlugin(ctx context.Context, cmd *cli.Command) error {
 	args := cmd.Args()
 	if args.Len() < 1 {
@@ -80,6 +123,7 @@ func initPlugin(ctx context.Context, cmd *cli.Command) error {
 				os.ModePerm,
 			),
 		)
+		createInitPyFile(internalPath)
 		safeSymlink(
 			internalPath,
 			filepath.Join(
@@ -246,7 +290,15 @@ func pluginActionBase(path string, save bool, fn pluginMoveAction) {
 			*toSave,
 			getOutputDirectory(installType, manifest["author"].(string), componentName),
 		)
+		var orgPath string
+		if installType == "backend" {
+			orgPath = filepath.Join(*toSave, "modules", manifest["author"].(string))
+			createInitPyFile(orgPath)
+		}
 		fn(componentPath, finalPath)
+		if installType == "backend" {
+			removeOrgInitIfNoPlugins(orgPath)
+		}
 	})
 	if save {
 		rootOptions.WriteToDisk()
