@@ -32,7 +32,7 @@ checksum:
   name_template: "{{ .ProjectName }}-{{ .Version }}-checksums.txt"
 
 archives:
-  - format: binary
+  - formats: binary
     name_template: >-
       {{ .ProjectName }}-
       {{- .Os }}-
