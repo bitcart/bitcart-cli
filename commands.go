@@ -41,11 +41,13 @@ func removeOrgInitIfNoPlugins(orgPath string) {
 		return
 	}
 	hasPluginDirs := false
+	onlyAllowed := true
 	for _, e := range entries {
 		name := e.Name()
 		if name == "__pycache__" || name == "__init__.py" {
 			continue
 		}
+		onlyAllowed = false
 		fi, statErr := e.Info()
 		if statErr != nil {
 			hasPluginDirs = true
@@ -67,6 +69,9 @@ func removeOrgInitIfNoPlugins(orgPath string) {
 	initPy := filepath.Join(orgPath, "__init__.py")
 	if exists(initPy) {
 		checkErr(os.Remove(initPy))
+	}
+	if onlyAllowed {
+		checkErr(os.Remove(orgPath))
 	}
 }
 
