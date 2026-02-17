@@ -20,10 +20,9 @@ jobs:
           persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: bitcart/bitcart-actions/actions/setup-go@master
         with:
-          go-version: 1.26
-          cache: false
+          enable-cache: false
 
       - uses: docker/setup-qemu-action@v3
 
