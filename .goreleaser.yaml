@@ -7,6 +7,9 @@ before:
     - go mod tidy
     - make clean
 
+gomod:
+  proxy: true
+
 builds:
   - env:
       - CGO_ENABLED=0
@@ -20,6 +23,7 @@ builds:
       - amd64
       - arm
       - arm64
+    mod_timestamp: "{{ .CommitTimestamp }}"
     flags:
       - -trimpath
     ldflags:
@@ -29,7 +33,11 @@ release:
   name_template: "Bitcart CLI v{{.Version}}"
 
 checksum:
-  name_template: "{{ .ProjectName }}-{{ .Version }}-checksums.txt"
+  name_template: "checksums.txt"
+
+source:
+  enabled: true
+  name_template: "{{ .ProjectName }}.src"
 
 archives:
   - formats: binary
@@ -40,3 +48,41 @@ archives:
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
+    builds_info:
+      mtime: "{{ .CommitTimestamp }}"
+
+sboms:
+  - artifacts: archive
+  - id: source
+    artifacts: source
+
+signs:
+  - cmd: cosign
+    signature: "${artifact}.sigstore.json"
+    args:
+      - sign-blob
+      - "--bundle=${signature}"
+      - "${artifact}"
+      - "--yes"
+    artifacts: checksum
+    output: true
+
+dockers:
+  - image_templates:
+      - "ghcr.io/bitcart/bitcart-cli:latest"
+      - "ghcr.io/bitcart/bitcart-cli:{{ .Tag }}"
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.name={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+
+docker_signs:
+  - cmd: cosign
+    output: true
+    args:
+      - "sign"
+      - "${artifact}"
+      - "--yes"
