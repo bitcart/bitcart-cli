@@ -17,6 +17,7 @@ repos:
     hooks:
       - id: golangci-lint-full
         name: golangci-lint
+        language_version: go1.26
   - repo: local
     hooks:
       - id: prettier
