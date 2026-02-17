@@ -7,9 +7,6 @@ before:
     - go mod tidy
     - make clean
 
-gomod:
-  proxy: true
-
 builds:
   - env:
       - CGO_ENABLED=0
@@ -23,6 +20,8 @@ builds:
       - amd64
       - arm
       - arm64
+    goarm:
+      - 7
     mod_timestamp: "{{ .CommitTimestamp }}"
     flags:
       - -trimpath
@@ -31,6 +30,9 @@ builds:
 
 release:
   name_template: "Bitcart CLI v{{.Version}}"
+
+gomod:
+  proxy: true
 
 checksum:
   name_template: "checksums.txt"
@@ -67,17 +69,22 @@ signs:
     artifacts: checksum
     output: true
 
-dockers:
-  - image_templates:
-      - "ghcr.io/bitcart/bitcart-cli:latest"
-      - "ghcr.io/bitcart/bitcart-cli:{{ .Tag }}"
+dockers_v2:
+  - images:
+      - "ghcr.io/bitcart/bitcart-cli"
+    tags:
+      - latest
+      - "{{ .Tag }}"
     dockerfile: Dockerfile
-    build_flag_templates:
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.name={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-      - "--label=org.opencontainers.image.source={{.GitURL}}"
+    labels:
+      org.opencontainers.image.created: "{{.Date}}"
+      org.opencontainers.image.name: "{{.ProjectName}}"
+      org.opencontainers.image.revision: "{{.FullCommit}}"
+      org.opencontainers.image.version: "{{.Version}}"
+      org.opencontainers.image.source: "{{.GitURL}}"
+      org.opencontainers.image.description: "Bitcart CLI is a command-line interface for interacting with Bitcart daemons and developing plugins"
+    annotations:
+      "index:org.opencontainers.image.description": "Bitcart CLI is a command-line interface for interacting with Bitcart daemons and developing plugins"
 
 docker_signs:
   - cmd: cosign
