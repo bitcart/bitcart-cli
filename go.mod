@@ -7,8 +7,8 @@ require (
 	github.com/bitcart/go-github-selfupdate v0.0.0-20230813225846-d9f4468b9beb
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/briandowns/spinner v1.23.2
-	github.com/go-git/go-billy/v5 v5.7.0
-	github.com/go-git/go-git/v5 v5.16.5
+	github.com/go-git/go-billy/v5 v5.8.0
+	github.com/go-git/go-git/v5 v5.18.0
 	github.com/joho/godotenv v1.5.1
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/urfave/cli/v3 v3.6.2
