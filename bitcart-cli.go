@@ -21,7 +21,7 @@ func getSpec(
 	endpoint string,
 	user string,
 	password string,
-) map[string]interface{} {
+) map[string]any {
 	req, err := http.NewRequest("GET", endpoint+"/spec", nil)
 	checkErr(err)
 	req.Header.Add("User-Agent", UserAgent())
@@ -48,7 +48,7 @@ func getDefaultURL(coin string) string {
 	return "http://" + host + ":" + port
 }
 
-func runCommand(c *cli.Command, help bool) (*jsonrpc.RPCResponse, map[string]interface{}, error) {
+func runCommand(c *cli.Command, help bool) (*jsonrpc.RPCResponse, map[string]any, error) {
 	args := c.Args()
 	wallet := c.String("wallet")
 	contract := c.String("contract")
@@ -78,9 +78,9 @@ func runCommand(c *cli.Command, help bool) (*jsonrpc.RPCResponse, map[string]int
 	if !help {
 		sl = args.Slice()[1:]
 	}
-	var params []interface{}
-	keyParams := map[string]interface{}{
-		"xpub": map[string]interface{}{
+	var params []any
+	keyParams := map[string]any{
+		"xpub": map[string]any{
 			"xpub":     wallet,
 			"contract": contract,
 			"address":  address,
@@ -110,7 +110,7 @@ func runCommand(c *cli.Command, help bool) (*jsonrpc.RPCResponse, map[string]int
 	if err != nil {
 		return nil, nil, err
 	}
-	spec := map[string]interface{}{}
+	spec := map[string]any{}
 	if !noSpec {
 		spec = getSpec(httpClient, url, user, password)
 	}
@@ -225,11 +225,11 @@ func main() {
 				}
 				return
 			}
-			output.Result = append(output.Result.([]interface{}), "plugin")
+			output.Result = append(output.Result.([]any), "plugin")
 			if updatesEnabled() {
-				output.Result = append(output.Result.([]interface{}), "update")
+				output.Result = append(output.Result.([]any), "update")
 			}
-			for _, v := range output.Result.([]interface{}) {
+			for _, v := range output.Result.([]any) {
 				fmt.Println(v)
 			}
 		},
@@ -244,10 +244,10 @@ func main() {
 						if spec["error"] != nil {
 							exitErr(jsonEncode(spec["error"]))
 						}
-						exceptions := spec["exceptions"].(map[string]interface{})
+						exceptions := spec["exceptions"].(map[string]any)
 						errorCode := fmt.Sprint(result.Error.Code)
 						if exception, ok := exceptions[errorCode]; ok {
-							exception, _ := exception.(map[string]interface{})
+							exception, _ := exception.(map[string]any)
 							exitErr(
 								exception["exc_name"].(string) + ": " + exception["docstring"].(string),
 							)

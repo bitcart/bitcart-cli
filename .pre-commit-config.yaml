@@ -6,6 +6,7 @@ repos:
       - id: trailing-whitespace
       - id: mixed-line-ending
       - id: check-case-conflict
+      - id: check-shebang-scripts-are-executable
       - id: check-json
       - id: check-toml
       - id: check-yaml
@@ -13,18 +14,23 @@ repos:
       - id: fix-byte-order-marker
       - id: detect-private-key
   - repo: https://github.com/golangci/golangci-lint
-    rev: v2.9.0
+    rev: v2.15.0
     hooks:
       - id: golangci-lint-full
         name: golangci-lint
-        language_version: go1.26
+        language_version: go1.27
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.31.1
+    hooks:
+      - id: zizmor
+        args: [--no-progress, --offline, --persona=auditor]
   - repo: local
     hooks:
-      - id: prettier
-        name: prettier
+      - id: oxfmt
+        name: oxfmt
         types: [text]
         language: node
         require_serial: true
-        entry: npx prettier --write --ignore-unknown
+        entry: npx oxfmt --no-error-on-unmatched-pattern
         exclude: >-
           ^plugin/.*.$

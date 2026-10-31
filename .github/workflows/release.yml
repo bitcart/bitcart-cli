@@ -4,17 +4,26 @@ on:
   release:
     types: [created]
 
+concurrency:
+  group: ${{ github.workflow_ref }}-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
 permissions:
-  contents: write
-  id-token: write
-  packages: write
-  attestations: write
+  contents: read
 
 jobs:
   goreleaser:
+    name: goreleaser
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # uploading release assets
+      packages: write # publishing to GHCR
+      id-token: write # OIDC for provenance
+      attestations: write # github attestations
+      artifact-metadata: write # artifact storage metadata (recommended by actions/attest)
+
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -24,30 +33,30 @@ jobs:
         with:
           enable-cache: false
 
-      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
-      - uses: sigstore/cosign-installer@v4.0.0
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
-      - uses: anchore/sbom-action/download-syft@v0
+      - uses: anchore/sbom-action/download-syft@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: goreleaser/goreleaser-action@v6
+      - uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
         with:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/attest-build-provenance@v3
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-checksums: ./dist/checksums.txt
 
-      - uses: actions/attest-build-provenance@v3
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-checksums: ./dist/digests.txt

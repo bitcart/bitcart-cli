@@ -23,4 +23,23 @@ jobs:
     uses: bitcart/bitcart-actions/.github/workflows/zizmor-audit.yml@master
     permissions:
       contents: read
-      security-events: write
+      security-events: write # needed for github advanced security
+
+  build:
+    name: build
+    needs: [lint, zizmor]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: bitcart/bitcart-actions/actions/setup-go@master
+
+      - name: Check go.mod is tidy
+        run: go mod tidy -diff
+
+      - name: Build
+        run: go build ./...

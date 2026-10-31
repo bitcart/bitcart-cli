@@ -11,7 +11,7 @@ func validateFileExists(path string) bool {
 	return exists(path)
 }
 
-func directoryValidator(val interface{}) error {
+func directoryValidator(val any) error {
 	statResult, err := os.Stat(val.(string))
 	if os.IsNotExist(err) {
 		return errors.New("Directory does not exist")
@@ -22,7 +22,7 @@ func directoryValidator(val interface{}) error {
 	return nil
 }
 
-func backendDirectoryValidator(val interface{}) error {
+func backendDirectoryValidator(val any) error {
 	if !validateFileExists(filepath.Join(val.(string), "gunicorn.conf.py")) {
 		return errors.New(
 			"Directory does not look to be a cloned https://github.com/bitcart/bitcart repository",
@@ -31,7 +31,7 @@ func backendDirectoryValidator(val interface{}) error {
 	return nil
 }
 
-func dockerDirectoryValidator(val interface{}) error {
+func dockerDirectoryValidator(val any) error {
 	if !validateFileExists(filepath.Join(val.(string), "setup.sh")) {
 		return errors.New(
 			"Directory does not look to be a cloned https://github.com/bitcart/bitcart-docker repository",
@@ -40,7 +40,7 @@ func dockerDirectoryValidator(val interface{}) error {
 	return nil
 }
 
-func frontendDirectoryValidator(val interface{}) error {
+func frontendDirectoryValidator(val any) error {
 	if !validateFileExists(filepath.Join(val.(string), "nuxt.config.js")) {
 		return errors.New("Directory does not look to be a frontend repository")
 	}

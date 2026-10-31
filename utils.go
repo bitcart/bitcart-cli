@@ -36,7 +36,7 @@ func checkErr(err error) {
 	}
 }
 
-func jsonEncode(data interface{}) string {
+func jsonEncode(data any) string {
 	buf := new(bytes.Buffer)
 	encoder := json.NewEncoder(buf)
 	encoder.SetIndent("", "  ")
@@ -46,8 +46,8 @@ func jsonEncode(data interface{}) string {
 	return string(buf.String())
 }
 
-func jsonDecodeBytes(data []byte) map[string]interface{} {
-	var result map[string]interface{}
+func jsonDecodeBytes(data []byte) map[string]any {
+	var result map[string]any
 	err := json.Unmarshal(data, &result)
 	checkErr(err)
 	return result
@@ -125,11 +125,11 @@ func prepareSchema(url string) *jsonschema.Schema {
 	return sch
 }
 
-func readManifest(path string) interface{} {
+func readManifest(path string) any {
 	manifestPath := filepath.Join(path, "manifest.json")
 	data, err := os.ReadFile(manifestPath)
 	checkErr(err)
-	var manifest interface{}
+	var manifest any
 	checkErr(json.Unmarshal(data, &manifest))
 	return manifest
 }
@@ -146,9 +146,9 @@ func getOutputDirectory(componentType string, author string, name string) string
 
 type installationProcessor func(string, string, string)
 
-func iterateInstallations(path string, manifest map[string]interface{}, fn installationProcessor) {
-	for _, installData := range manifest["installs"].([]interface{}) {
-		installData := installData.(map[string]interface{})
+func iterateInstallations(path string, manifest map[string]any, fn installationProcessor) {
+	for _, installData := range manifest["installs"].([]any) {
+		installData := installData.(map[string]any)
 		componentPath := filepath.Join(path, installData["path"].(string))
 		componentName := filepath.Base(componentPath)
 		installType := installData["type"].(string)
@@ -156,9 +156,9 @@ func iterateInstallations(path string, manifest map[string]interface{}, fn insta
 	}
 }
 
-func setField(v interface{}, name string, value string) {
+func setField(v any, name string, value string) {
 	rv := reflect.ValueOf(v)
-	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
+	if rv.Kind() != reflect.Pointer || rv.Elem().Kind() != reflect.Struct {
 		exitErr("v must be pointer to struct")
 	}
 	rv = rv.Elem()

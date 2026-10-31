@@ -28,20 +28,20 @@ var COINS = map[string]string{
 	"xmr":   "5011",
 }
 
-var componentData = map[string]interface{}{
-	"backend": map[string]interface{}{
+var componentData = map[string]any{
+	"backend": map[string]any{
 		"name":      "bitcart",
 		"validator": survey.WithValidator(backendDirectoryValidator),
 	},
-	"admin": map[string]interface{}{
+	"admin": map[string]any{
 		"name":      "bitcart-admin",
 		"validator": survey.WithValidator(frontendDirectoryValidator),
 	},
-	"store": map[string]interface{}{
+	"store": map[string]any{
 		"name":      "bitcart-store",
 		"validator": survey.WithValidator(frontendDirectoryValidator),
 	},
-	"docker": map[string]interface{}{
+	"docker": map[string]any{
 		"name":      "bitcart-docker",
 		"validator": survey.WithValidator(dockerDirectoryValidator),
 	},
@@ -77,7 +77,7 @@ func copyFileContents(src, dst string) {
 	copyData(fileContent, dst)
 }
 
-func executeTemplate(templatePath string, data interface{}, stripSpaces bool) []byte {
+func executeTemplate(templatePath string, data any, stripSpaces bool) []byte {
 	tmpl, err := template.New(filepath.Base(templatePath)).Funcs(template.FuncMap{
 		"IsLast": func(i, size int) bool { return i == size-1 },
 	}).ParseFS(pluginsData, templatePath)

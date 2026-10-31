@@ -6,12 +6,12 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/briandowns/spinner"
 	"github.com/urfave/cli/v3"
-	"golang.org/x/exp/slices"
 )
 
 type ComponentType struct {
@@ -280,16 +280,16 @@ type pluginMoveAction func(string, string)
 func pluginActionBase(path string, save bool, fn pluginMoveAction) {
 	path, err := filepath.Abs(path)
 	checkErr(err)
-	manifest := readManifest(path).(map[string]interface{})
+	manifest := readManifest(path).(map[string]any)
 	iterateInstallations(path, manifest, func(componentPath, componentName, installType string) {
 		toSave := getComponentConfigEntry(installType)
 		if *toSave == "" {
 			checkErr(survey.AskOne(&survey.Input{
 				Message: fmt.Sprintf(
 					"Enter the path to cloned %s repository",
-					componentData[installType].(map[string]interface{})["name"].(string),
+					componentData[installType].(map[string]any)["name"].(string),
 				),
-			}, toSave, survey.WithValidator(survey.Required), survey.WithValidator(directoryValidator), componentData[installType].(map[string]interface{})["validator"].(survey.AskOpt)))
+			}, toSave, survey.WithValidator(survey.Required), survey.WithValidator(directoryValidator), componentData[installType].(map[string]any)["validator"].(survey.AskOpt)))
 		}
 		finalPath := filepath.Join(
 			*toSave,
@@ -359,7 +359,7 @@ func validatePlugin(ctx context.Context, cmd *cli.Command) error {
 	}
 	iterateInstallations(
 		path,
-		manifest.(map[string]interface{}),
+		manifest.(map[string]any),
 		func(componentPath, componentName, installType string) {
 			switch installType {
 			case "backend":
@@ -387,7 +387,7 @@ func packagePlugin(ctx context.Context, cmd *cli.Command) error {
 		return cli.ShowSubcommandHelp(cmd)
 	}
 	path := args.Get(0)
-	manifest := readManifest(path).(map[string]interface{})
+	manifest := readManifest(path).(map[string]any)
 	noStrip := cmd.Bool("no-strip") || args.Get(1) == "--no-strip"
 	checkExcludeGitignore, err := rejectGitignored([]string{path})
 	checkErr(err)
