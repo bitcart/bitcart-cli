@@ -29,19 +29,23 @@ type BasicCreatePluginAnswers struct {
 }
 
 // bubbletea turns SIGTERM into a normal quit, which huh would report as a submitted form
-func runForm(fields ...huh.Field) {
-	checkErr(huh.NewForm(huh.NewGroup(fields...)).WithProgramOptions(tea.WithoutSignalHandler()).Run())
+func runForm(groups ...*huh.Group) {
+	checkErr(huh.NewForm(groups...).WithProgramOptions(tea.WithoutSignalHandler()).Run())
 }
 
-func askInput(title string, value *string, validators ...func(string) error) {
-	runForm(huh.NewInput().Title(title).Value(value).Validate(func(input string) error {
+func allOf(validators ...func(string) error) func(string) error {
+	return func(input string) error {
 		for _, validate := range validators {
 			if err := validate(input); err != nil {
 				return err
 			}
 		}
 		return nil
-	}))
+	}
+}
+
+func askInput(title string, value *string, validators ...func(string) error) {
+	runForm(huh.NewGroup(huh.NewInput().Title(title).Value(value).Validate(allOf(validators...))))
 }
 
 func createInitPyFile(dir string) {
@@ -100,27 +104,19 @@ func initPlugin(ctx context.Context, cmd *cli.Command) error {
 	path := args.Get(0)
 	save := cmd.Bool("save")
 	path, err := filepath.Abs(path)
-	createIfNotExists(path, os.ModePerm)
 	checkErr(err)
 	answers := BasicCreatePluginAnswers{}
-	runForm(basicPluginCreate(&answers)...)
+	componentNames := map[string]*string{}
+	groups := basicPluginCreate(&answers)
+	for _, componentType := range []string{"backend", "admin", "store", "docker"} {
+		componentNames[componentType] = new(string)
+		groups = append(groups, componentGroup(componentType, componentNames[componentType], &answers))
+	}
+	runForm(groups...)
+	createIfNotExists(path, os.ModePerm)
 	if slices.Contains(answers.ComponentTypes, "backend") {
 		backendPath := getComponentConfigEntry("backend")
-		var componentName string
-		askInput(
-			"Enter name of your backend component (i.e. name of the subfolder)",
-			&componentName,
-			huh.ValidateNotEmpty(),
-		)
-		if *backendPath == "" {
-			askInput(
-				"Enter the path to cloned bitcart repository",
-				backendPath,
-				huh.ValidateNotEmpty(),
-				directoryValidator,
-				backendDirectoryValidator,
-			)
-		}
+		componentName := *componentNames["backend"]
 		*backendPath, err = filepath.Abs(*backendPath)
 		checkErr(err)
 		internalPath := filepath.Join(path, "src/backend/"+componentName)
@@ -150,21 +146,7 @@ func initPlugin(ctx context.Context, cmd *cli.Command) error {
 	}
 	if slices.Contains(answers.ComponentTypes, "docker") {
 		dockerPath := getComponentConfigEntry("docker")
-		var componentName string
-		askInput(
-			"Enter name of your docker component (i.e. name of the subfolder)",
-			&componentName,
-			huh.ValidateNotEmpty(),
-		)
-		if *dockerPath == "" {
-			askInput(
-				"Enter the path to cloned bitcart-docker repository",
-				dockerPath,
-				huh.ValidateNotEmpty(),
-				directoryValidator,
-				dockerDirectoryValidator,
-			)
-		}
+		componentName := *componentNames["docker"]
 		*dockerPath, err = filepath.Abs(*dockerPath)
 		checkErr(err)
 		internalPath := filepath.Join(path, "src/docker/"+componentName)
@@ -184,21 +166,7 @@ func initPlugin(ctx context.Context, cmd *cli.Command) error {
 	for _, componentType := range []string{"admin", "store"} {
 		if slices.Contains(answers.ComponentTypes, componentType) {
 			frontendPath := getComponentConfigEntry(componentType)
-			var componentName string
-			askInput(
-				fmt.Sprintf("Enter name of your %s component (i.e. name of the subfolder)", componentType),
-				&componentName,
-				huh.ValidateNotEmpty(),
-			)
-			if *frontendPath == "" {
-				askInput(
-					fmt.Sprintf("Enter the path to cloned %s frontend repository", componentType),
-					frontendPath,
-					huh.ValidateNotEmpty(),
-					directoryValidator,
-					frontendDirectoryValidator,
-				)
-			}
+			componentName := *componentNames[componentType]
 			*frontendPath, err = filepath.Abs(*frontendPath)
 			checkErr(err)
 			answers.FinalTypes = append(

@@ -3,7 +3,10 @@ package main
 import (
 	"bytes"
 	"embed"
+	"fmt"
 	"path/filepath"
+	"slices"
+	"strings"
 	"text/template"
 
 	"charm.land/huh/v2"
@@ -47,24 +50,47 @@ var componentData = map[string]any{
 	},
 }
 
-func basicPluginCreate(answers *BasicCreatePluginAnswers) []huh.Field {
-	return []huh.Field{
-		huh.NewInput().
-			Title("Enter the name for your plugin").
-			Value(&answers.Name).
-			Validate(huh.ValidateNotEmpty()),
-		huh.NewInput().
-			Title("Enter the author name for your plugin").
-			Value(&answers.Author).
-			Validate(huh.ValidateNotEmpty()),
-		huh.NewInput().
-			Title("Enter plugin description (optional)").
-			Value(&answers.Description),
-		huh.NewMultiSelect[string]().
-			Title("Select which components will your plugin update").
-			Options(huh.NewOptions("backend", "admin", "store", "docker")...).
-			Value(&answers.ComponentTypes),
+func basicPluginCreate(answers *BasicCreatePluginAnswers) []*huh.Group {
+	return []*huh.Group{
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Enter the name for your plugin").
+				Value(&answers.Name).
+				Validate(huh.ValidateNotEmpty()),
+			huh.NewInput().
+				Title("Enter the author name for your plugin").
+				Value(&answers.Author).
+				Validate(huh.ValidateNotEmpty()),
+			huh.NewInput().
+				Title("Enter plugin description (optional)").
+				Value(&answers.Description),
+		).Title("Plugin details"),
+		huh.NewGroup(
+			huh.NewMultiSelect[string]().
+				Title("Select which components will your plugin update").
+				Options(huh.NewOptions("backend", "admin", "store", "docker")...).
+				Value(&answers.ComponentTypes),
+		).Title("Components"),
 	}
+}
+
+func componentGroup(componentType string, name *string, answers *BasicCreatePluginAnswers) *huh.Group {
+	component := componentData[componentType].(map[string]any)
+	fields := []huh.Field{
+		huh.NewInput().
+			Title(fmt.Sprintf("Enter name of your %s component (i.e. name of the subfolder)", componentType)).
+			Value(name).
+			Validate(huh.ValidateNotEmpty()),
+	}
+	if repositoryPath := getComponentConfigEntry(componentType); *repositoryPath == "" {
+		fields = append(fields, huh.NewInput().
+			Title(fmt.Sprintf("Enter the path to cloned %s repository", component["name"].(string))).
+			Value(repositoryPath).
+			Validate(allOf(huh.ValidateNotEmpty(), directoryValidator, component["validator"].(func(string) error))))
+	}
+	return huh.NewGroup(fields...).
+		Title(strings.ToUpper(componentType[:1]) + componentType[1:] + " component").
+		WithHideFunc(func() bool { return !slices.Contains(answers.ComponentTypes, componentType) })
 }
 
 func copyFileContents(src, dst string) {
