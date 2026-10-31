@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/AlecAivazis/survey/v2"
+	"charm.land/huh/v2"
 )
 
 //go:embed plugin/*
@@ -31,44 +31,40 @@ var COINS = map[string]string{
 var componentData = map[string]any{
 	"backend": map[string]any{
 		"name":      "bitcart",
-		"validator": survey.WithValidator(backendDirectoryValidator),
+		"validator": backendDirectoryValidator,
 	},
 	"admin": map[string]any{
 		"name":      "bitcart-admin",
-		"validator": survey.WithValidator(frontendDirectoryValidator),
+		"validator": frontendDirectoryValidator,
 	},
 	"store": map[string]any{
 		"name":      "bitcart-store",
-		"validator": survey.WithValidator(frontendDirectoryValidator),
+		"validator": frontendDirectoryValidator,
 	},
 	"docker": map[string]any{
 		"name":      "bitcart-docker",
-		"validator": survey.WithValidator(dockerDirectoryValidator),
+		"validator": dockerDirectoryValidator,
 	},
 }
 
-var basicPluginCreate = []*survey.Question{
-	{
-		Name:     "name",
-		Prompt:   &survey.Input{Message: "Enter the name for your plugin"},
-		Validate: survey.Required,
-	},
-	{
-		Name:     "author",
-		Prompt:   &survey.Input{Message: "Enter the author name for your plugin"},
-		Validate: survey.Required,
-	},
-	{
-		Name:   "description",
-		Prompt: &survey.Input{Message: "Enter plugin description (optional)"},
-	},
-	{
-		Name: "ComponentTypes",
-		Prompt: &survey.MultiSelect{
-			Message: "Select which components will your plugin update",
-			Options: []string{"backend", "admin", "store", "docker"},
-		},
-	},
+func basicPluginCreate(answers *BasicCreatePluginAnswers) []huh.Field {
+	return []huh.Field{
+		huh.NewInput().
+			Title("Enter the name for your plugin").
+			Value(&answers.Name).
+			Validate(huh.ValidateNotEmpty()),
+		huh.NewInput().
+			Title("Enter the author name for your plugin").
+			Value(&answers.Author).
+			Validate(huh.ValidateNotEmpty()),
+		huh.NewInput().
+			Title("Enter plugin description (optional)").
+			Value(&answers.Description),
+		huh.NewMultiSelect[string]().
+			Title("Select which components will your plugin update").
+			Options(huh.NewOptions("backend", "admin", "store", "docker")...).
+			Value(&answers.ComponentTypes),
+	}
 }
 
 func copyFileContents(src, dst string) {

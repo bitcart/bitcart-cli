@@ -1,26 +1,34 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
-	"github.com/bitcart/go-github-selfupdate/selfupdate"
-	"github.com/blang/semver"
+	"github.com/Masterminds/semver/v3"
 	"github.com/briandowns/spinner"
+	"github.com/creativeprojects/go-selfupdate"
 )
 
 type Options struct {
-	Current semver.Version
+	Current *semver.Version
 	Found   bool
 	Latest  *selfupdate.Release
 
 	updater   *selfupdate.Updater
 	githubAPI string
 	slug      string
+}
+
+var releaseArch = map[string]string{
+	"amd64": "x86_64",
+	"arm64": "aarch64",
+	"386":   "i686",
 }
 
 // hoursBeforeCheck is used to configure the delay between auto-update checks
@@ -40,7 +48,7 @@ func skipUpdateByDefault() bool {
 		os.Getenv("BITCART_CLI_SKIP_UPDATE_CHECK") == "true"
 }
 
-func checkForUpdates(opts *Config) error {
+func checkForUpdates(ctx context.Context, opts *Config) error {
 	if opts.SkipUpdateCheck {
 		return nil
 	}
@@ -56,6 +64,7 @@ func checkForUpdates(opts *Config) error {
 		spr.Suffix = " Checking for updates..."
 		spr.Start()
 		check, err := CheckForUpdates(
+			ctx,
 			opts.GitHubAPI,
 			slug,
 			Version,
@@ -91,12 +100,12 @@ func checkForUpdates(opts *Config) error {
 	return nil
 }
 
-func CheckForUpdates(githubAPI, slug, current string) (*Options, error) {
+func CheckForUpdates(ctx context.Context, githubAPI, slug, current string) (*Options, error) {
 	var (
 		err   error
 		check *Options
 	)
-	currentVersion, err := semver.Parse(current)
+	currentVersion, err := semver.StrictNewVersion(current)
 	if err != nil {
 		return nil, errors.New("Failed to parse current version: " + err.Error())
 	}
@@ -106,26 +115,34 @@ func CheckForUpdates(githubAPI, slug, current string) (*Options, error) {
 		githubAPI: githubAPI,
 		slug:      slug,
 	}
-	err = checkFromSource(check)
+	err = checkFromSource(ctx, check)
 	return check, err
 }
 
-func checkFromSource(check *Options) error {
-	updateConfig := selfupdate.Config{}
+func checkFromSource(ctx context.Context, check *Options) error {
+	sourceConfig := selfupdate.GitHubConfig{}
 	if check.githubAPI != "https://api.github.com" {
-		updateConfig.EnterpriseBaseURL = check.githubAPI
+		sourceConfig.EnterpriseBaseURL = check.githubAPI
 	}
-	updater, err := selfupdate.NewUpdater(updateConfig)
+	source, err := selfupdate.NewGitHubSource(sourceConfig)
+	if err != nil {
+		return err
+	}
+	updater, err := selfupdate.NewUpdater(selfupdate.Config{
+		Source:    source,
+		Arch:      releaseArch[runtime.GOARCH],
+		Validator: &selfupdate.ChecksumValidator{UniqueFilename: "checksums.txt"},
+	})
 	if err != nil {
 		return err
 	}
 	check.updater = updater
-	err = latestRelease(check)
+	err = latestRelease(ctx, check)
 	return err
 }
 
-func latestRelease(opts *Options) error {
-	latest, found, err := opts.updater.DetectLatest(opts.slug)
+func latestRelease(ctx context.Context, opts *Options) error {
+	latest, found, err := opts.updater.DetectLatest(ctx, selfupdate.ParseSlug(opts.slug))
 	opts.Latest = latest
 	opts.Found = found
 	if err != nil {
@@ -133,8 +150,7 @@ func latestRelease(opts *Options) error {
 This is most likely due to GitHub rate-limiting on unauthenticated requests.
 To have the bitcart-cli make authenticated requests please:
   1. Generate a token at https://github.com/settings/tokens
-  2. Set the token by either adding it to your ~/.gitconfig or
-     setting the GITHUB_TOKEN environment variable.
+  2. Set the token in the GITHUB_TOKEN environment variable.
 Instructions for generating a token can be found at:
 https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/
 We call the GitHub releases API to look for new releases.
@@ -145,16 +161,16 @@ More information about that API can be found here: https://developer.github.com/
 }
 
 func IsLatestVersion(opts *Options) bool {
-	if opts.Current.String() == "" || opts.Latest == nil {
+	if opts.Current == nil || opts.Latest == nil {
 		return true
 	}
-	return opts.Current.GE(opts.Latest.Version)
+	return opts.Latest.LessOrEqual(opts.Current.String())
 }
 
 func ReportVersion(opts *Options) string {
 	return strings.Join([]string{
 		fmt.Sprintf("You are running %s", opts.Current),
-		fmt.Sprintf("A new release is available (%s)", opts.Latest.Version),
+		fmt.Sprintf("A new release is available (%s)", opts.Latest.Version()),
 	}, "\n")
 }
 
@@ -167,10 +183,14 @@ func HowToUpdate(opts *Options) string {
 	}
 }
 
-func InstallLatest(opts *Options) (string, error) {
-	release, err := opts.updater.UpdateSelf(opts.Current, opts.slug)
+func InstallLatest(ctx context.Context, opts *Options) (string, error) {
+	release, err := opts.updater.UpdateSelf(
+		ctx,
+		opts.Current.String(),
+		selfupdate.ParseSlug(opts.slug),
+	)
 	if err != nil {
 		return "", errors.New("Failed to install update: " + err.Error())
 	}
-	return fmt.Sprintf("Updated to %s", release.Version), nil
+	return fmt.Sprintf("Updated to %s", release.Version()), nil
 }

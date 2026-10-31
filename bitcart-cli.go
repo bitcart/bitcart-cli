@@ -210,7 +210,7 @@ func main() {
 			if cmd.Args().Get(0) == "update" {
 				return ctx, nil
 			}
-			err := checkForUpdates(rootOptions)
+			err := checkForUpdates(ctx, rootOptions)
 			if err != nil {
 				fmt.Printf("Error checking for updates: %s\n", err)
 			}

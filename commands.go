@@ -9,7 +9,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/AlecAivazis/survey/v2"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/huh/v2"
 	"github.com/briandowns/spinner"
 	"github.com/urfave/cli/v3"
 )
@@ -25,6 +26,22 @@ type BasicCreatePluginAnswers struct {
 	Description    string
 	ComponentTypes []string
 	FinalTypes     []ComponentType
+}
+
+// bubbletea turns SIGTERM into a normal quit, which huh would report as a submitted form
+func runForm(fields ...huh.Field) {
+	checkErr(huh.NewForm(huh.NewGroup(fields...)).WithProgramOptions(tea.WithoutSignalHandler()).Run())
+}
+
+func askInput(title string, value *string, validators ...func(string) error) {
+	runForm(huh.NewInput().Title(title).Value(value).Validate(func(input string) error {
+		for _, validate := range validators {
+			if err := validate(input); err != nil {
+				return err
+			}
+		}
+		return nil
+	}))
 }
 
 func createInitPyFile(dir string) {
@@ -86,28 +103,22 @@ func initPlugin(ctx context.Context, cmd *cli.Command) error {
 	createIfNotExists(path, os.ModePerm)
 	checkErr(err)
 	answers := BasicCreatePluginAnswers{}
-	checkErr(survey.Ask(basicPluginCreate, &answers))
+	runForm(basicPluginCreate(&answers)...)
 	if slices.Contains(answers.ComponentTypes, "backend") {
 		backendPath := getComponentConfigEntry("backend")
 		var componentName string
-		checkErr(
-			survey.AskOne(
-				&survey.Input{
-					Message: "Enter name of your backend component (i.e. name of the subfolder)",
-				},
-				&componentName,
-				survey.WithValidator(survey.Required),
-			),
+		askInput(
+			"Enter name of your backend component (i.e. name of the subfolder)",
+			&componentName,
+			huh.ValidateNotEmpty(),
 		)
 		if *backendPath == "" {
-			checkErr(
-				survey.AskOne(
-					&survey.Input{Message: "Enter the path to cloned bitcart repository"},
-					backendPath,
-					survey.WithValidator(survey.Required),
-					survey.WithValidator(directoryValidator),
-					survey.WithValidator(backendDirectoryValidator),
-				),
+			askInput(
+				"Enter the path to cloned bitcart repository",
+				backendPath,
+				huh.ValidateNotEmpty(),
+				directoryValidator,
+				backendDirectoryValidator,
 			)
 		}
 		*backendPath, err = filepath.Abs(*backendPath)
@@ -140,24 +151,18 @@ func initPlugin(ctx context.Context, cmd *cli.Command) error {
 	if slices.Contains(answers.ComponentTypes, "docker") {
 		dockerPath := getComponentConfigEntry("docker")
 		var componentName string
-		checkErr(
-			survey.AskOne(
-				&survey.Input{
-					Message: "Enter name of your docker component (i.e. name of the subfolder)",
-				},
-				&componentName,
-				survey.WithValidator(survey.Required),
-			),
+		askInput(
+			"Enter name of your docker component (i.e. name of the subfolder)",
+			&componentName,
+			huh.ValidateNotEmpty(),
 		)
 		if *dockerPath == "" {
-			checkErr(
-				survey.AskOne(
-					&survey.Input{Message: "Enter the path to cloned bitcart-docker repository"},
-					dockerPath,
-					survey.WithValidator(survey.Required),
-					survey.WithValidator(directoryValidator),
-					survey.WithValidator(dockerDirectoryValidator),
-				),
+			askInput(
+				"Enter the path to cloned bitcart-docker repository",
+				dockerPath,
+				huh.ValidateNotEmpty(),
+				directoryValidator,
+				dockerDirectoryValidator,
 			)
 		}
 		*dockerPath, err = filepath.Abs(*dockerPath)
@@ -180,32 +185,18 @@ func initPlugin(ctx context.Context, cmd *cli.Command) error {
 		if slices.Contains(answers.ComponentTypes, componentType) {
 			frontendPath := getComponentConfigEntry(componentType)
 			var componentName string
-			checkErr(
-				survey.AskOne(
-					&survey.Input{
-						Message: fmt.Sprintf(
-							"Enter name of your %s component (i.e. name of the subfolder)",
-							componentType,
-						),
-					},
-					&componentName,
-					survey.WithValidator(survey.Required),
-				),
+			askInput(
+				fmt.Sprintf("Enter name of your %s component (i.e. name of the subfolder)", componentType),
+				&componentName,
+				huh.ValidateNotEmpty(),
 			)
 			if *frontendPath == "" {
-				checkErr(
-					survey.AskOne(
-						&survey.Input{
-							Message: fmt.Sprintf(
-								"Enter the path to cloned %s frontend repository",
-								componentType,
-							),
-						},
-						frontendPath,
-						survey.WithValidator(survey.Required),
-						survey.WithValidator(directoryValidator),
-						survey.WithValidator(frontendDirectoryValidator),
-					),
+				askInput(
+					fmt.Sprintf("Enter the path to cloned %s frontend repository", componentType),
+					frontendPath,
+					huh.ValidateNotEmpty(),
+					directoryValidator,
+					frontendDirectoryValidator,
 				)
 			}
 			*frontendPath, err = filepath.Abs(*frontendPath)
@@ -284,12 +275,16 @@ func pluginActionBase(path string, save bool, fn pluginMoveAction) {
 	iterateInstallations(path, manifest, func(componentPath, componentName, installType string) {
 		toSave := getComponentConfigEntry(installType)
 		if *toSave == "" {
-			checkErr(survey.AskOne(&survey.Input{
-				Message: fmt.Sprintf(
+			askInput(
+				fmt.Sprintf(
 					"Enter the path to cloned %s repository",
 					componentData[installType].(map[string]any)["name"].(string),
 				),
-			}, toSave, survey.WithValidator(survey.Required), survey.WithValidator(directoryValidator), componentData[installType].(map[string]any)["validator"].(survey.AskOpt)))
+				toSave,
+				huh.ValidateNotEmpty(),
+				directoryValidator,
+				componentData[installType].(map[string]any)["validator"].(func(string) error),
+			)
 		}
 		finalPath := filepath.Join(
 			*toSave,
@@ -415,6 +410,7 @@ func updateCLI(ctx context.Context, cmd *cli.Command) error {
 	spr.Suffix = " Checking for updates..."
 	spr.Start()
 	check, err := CheckForUpdates(
+		ctx,
 		rootOptions.GitHubAPI,
 		slug,
 		Version,
@@ -436,7 +432,7 @@ func updateCLI(ctx context.Context, cmd *cli.Command) error {
 	}
 	spr.Suffix = " Installing update..."
 	spr.Restart()
-	message, err := InstallLatest(check)
+	message, err := InstallLatest(ctx, check)
 	spr.Stop()
 	checkErr(err)
 	fmt.Println(message)
