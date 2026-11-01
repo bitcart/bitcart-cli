@@ -11,7 +11,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.9.2
 	github.com/go-git/go-git/v5 v5.19.3
 	github.com/joho/godotenv v1.5.1
-	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 	github.com/urfave/cli/v3 v3.14.0
 	github.com/ybbus/jsonrpc/v3 v3.1.9
 	gopkg.in/yaml.v3 v3.0.1
