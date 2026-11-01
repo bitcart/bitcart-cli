@@ -18,6 +18,7 @@ jobs:
     name: prepare
     if: ${{ github.ref_type == 'branch' }}
     runs-on: ubuntu-latest
+
     permissions:
       contents: write # creating the tag
       actions: write # starting the release run on the tag
@@ -53,6 +54,7 @@ jobs:
     name: goreleaser
     if: ${{ github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
+
     permissions:
       contents: write # uploading release assets
       packages: write # publishing to GHCR

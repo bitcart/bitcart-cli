@@ -18,16 +18,17 @@ jobs:
     name: lint
     uses: bitcart/bitcart-actions/.github/workflows/lint.yml@master
 
-  zizmor:
-    name: zizmor
-    uses: bitcart/bitcart-actions/.github/workflows/zizmor-audit.yml@master
+  workflows:
+    name: workflows
+    uses: bitcart/bitcart-actions/.github/workflows/workflow-checks.yml@master
+
     permissions:
       contents: read
       security-events: write # needed for github advanced security
 
   build:
     name: build
-    needs: [lint, zizmor]
+    needs: [lint, workflows]
     runs-on: ubuntu-latest
 
     steps:
