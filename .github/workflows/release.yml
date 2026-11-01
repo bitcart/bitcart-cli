@@ -1,19 +1,56 @@
 name: Release
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - "[0-9]*"
+  workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow_ref }}-${{ github.event.release.tag_name }}
+  group: ${{ github.workflow_ref }}-${{ github.ref_name }}
   cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
+  prepare:
+    name: prepare
+    if: ${{ github.ref_type == 'branch' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # creating the tag
+      actions: write # starting the release run on the tag
+
+    steps:
+      - name: Tag the draft release and start its release run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          drafts=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases" --jq '.[] | select(.draft) | .tag_name')
+          count=$(printf '%s' "$drafts" | grep -c . || true)
+          if [ "$count" -ne 1 ]; then
+            echo "Expected exactly one draft release, found $count" >&2
+            exit 1
+          fi
+          tag=$drafts
+          if ! printf '%s' "$tag" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Invalid version tag on the draft release: '$tag'" >&2
+            exit 1
+          fi
+          existing=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq .object.sha 2>/dev/null || true)
+          if [ -z "$existing" ]; then
+            gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$tag" -f sha="$GITHUB_SHA" > /dev/null
+          elif [ "$existing" != "$GITHUB_SHA" ]; then
+            echo "Tag $tag already exists on $existing, not $GITHUB_SHA" >&2
+            exit 1
+          fi
+          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref "$tag"
+          echo "Started the release run for $tag" >> "$GITHUB_STEP_SUMMARY"
+
   goreleaser:
     name: goreleaser
+    if: ${{ github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write # uploading release assets
@@ -23,6 +60,20 @@ jobs:
       artifact-metadata: write # artifact storage metadata (recommended by actions/attest)
 
     steps:
+      - name: Name the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if ! printf '%s' "$TAG" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Invalid version tag: '$TAG'" >&2
+            exit 1
+          fi
+          id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases" --jq ".[] | select(.draft and .tag_name == \"$TAG\") | .id" | head -n 1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$id" -f name="Bitcart CLI v$TAG" > /dev/null
+          fi
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
@@ -60,3 +111,9 @@ jobs:
       - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-checksums: ./dist/digests.txt
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
