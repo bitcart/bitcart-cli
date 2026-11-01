@@ -16,8 +16,7 @@ import (
 
 	"github.com/go-git/go-billy/v5/osfs"
 	gitignore "github.com/go-git/go-git/v5/plumbing/format/gitignore"
-	"github.com/santhosh-tekuri/jsonschema/v5"
-	_ "github.com/santhosh-tekuri/jsonschema/v5/httploader"
+	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 
 func smartPrint(text string) {
@@ -120,7 +119,7 @@ func prepareSchema(url string) *jsonschema.Schema {
 			),
 		)
 	}
-	sch, err := jsonschema.Compile(schemaPath)
+	sch, err := jsonschema.NewCompiler().Compile(schemaPath)
 	checkErr(err)
 	return sch
 }
