@@ -38,12 +38,13 @@ jobs:
             echo "Invalid version tag on the draft release: '$tag'" >&2
             exit 1
           fi
-          existing=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq .object.sha 2>/dev/null || true)
-          if [ -z "$existing" ]; then
+          if existing=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq .object.sha 2>/dev/null); then
+            if [ "$existing" != "$GITHUB_SHA" ]; then
+              echo "Tag $tag already exists on $existing, not $GITHUB_SHA" >&2
+              exit 1
+            fi
+          else
             gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$tag" -f sha="$GITHUB_SHA" > /dev/null
-          elif [ "$existing" != "$GITHUB_SHA" ]; then
-            echo "Tag $tag already exists on $existing, not $GITHUB_SHA" >&2
-            exit 1
           fi
           gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref "$tag"
           echo "Started the release run for $tag" >> "$GITHUB_STEP_SUMMARY"
