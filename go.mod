@@ -6,7 +6,6 @@ require (
 	charm.land/bubbletea/v2 v2.1.1
 	charm.land/huh/v2 v2.0.3
 	github.com/Masterminds/semver/v3 v3.5.0
-	github.com/charmbracelet/x/term v0.2.2
 	github.com/creativeprojects/go-selfupdate v1.7.0
 	github.com/go-git/go-billy/v5 v5.9.2
 	github.com/go-git/go-git/v5 v5.19.3
@@ -15,6 +14,7 @@ require (
 	github.com/urfave/cli/v3 v3.14.0
 	github.com/ybbus/jsonrpc/v3 v3.1.9
 	go.yaml.in/yaml/v4 v4.0.0
+	golang.org/x/term v0.48.0
 )
 
 require (
@@ -30,6 +30,7 @@ require (
 	github.com/charmbracelet/x/ansi v0.11.9 // indirect
 	github.com/charmbracelet/x/exp/ordered v0.1.0 // indirect
 	github.com/charmbracelet/x/exp/strings v0.1.0 // indirect
+	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect

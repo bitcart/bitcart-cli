@@ -13,14 +13,14 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/huh/v2/spinner"
 	"github.com/Masterminds/semver/v3"
-	"github.com/charmbracelet/x/term"
 	"github.com/creativeprojects/go-selfupdate"
+	"golang.org/x/term"
 )
 
 var errInterrupted = errors.New("interrupted")
 
 func withSpinner(ctx context.Context, title string, action func(context.Context) error) error {
-	if !term.IsTerminal(os.Stderr.Fd()) {
+	if !term.IsTerminal(int(os.Stderr.Fd())) {
 		return action(ctx)
 	}
 	ctx, cancel := context.WithCancel(ctx)
