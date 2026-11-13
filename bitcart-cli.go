@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -211,8 +212,11 @@ func main() {
 				return ctx, nil
 			}
 			err := checkForUpdates(ctx, rootOptions)
-			if err != nil {
-				fmt.Printf("Error checking for updates: %s\n", err)
+			switch {
+			case errors.Is(err, errInterrupted):
+				checkErr(err)
+			case err != nil:
+				fmt.Fprintf(os.Stderr, "Error checking for updates: %s\n", err)
 			}
 			return ctx, nil
 		},

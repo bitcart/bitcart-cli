@@ -10,10 +10,43 @@ import (
 	"strings"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
+	"charm.land/huh/v2/spinner"
 	"github.com/Masterminds/semver/v3"
-	"github.com/briandowns/spinner"
+	"github.com/charmbracelet/x/term"
 	"github.com/creativeprojects/go-selfupdate"
 )
+
+var errInterrupted = errors.New("interrupted")
+
+func withSpinner(ctx context.Context, title string, action func(context.Context) error) error {
+	if !term.IsTerminal(os.Stderr.Fd()) {
+		return action(ctx)
+	}
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	result := make(chan error, 1)
+	err := spinner.New().
+		Title(title).
+		WithOutput(os.Stderr).
+		Context(ctx).
+		ActionWithErr(func(ctx context.Context) error {
+			err := action(ctx)
+			result <- err
+			return err
+		}).
+		Run()
+	select {
+	case err := <-result:
+		return err
+	default:
+		// bubbletea turns SIGTERM into a normal quit, so a nil error doesn't mean the action finished
+		if err == nil || errors.Is(err, tea.ErrInterrupted) {
+			return errInterrupted
+		}
+		return err
+	}
+}
 
 type Options struct {
 	Current *semver.Version
@@ -57,45 +90,23 @@ func checkForUpdates(ctx context.Context, opts *Config) error {
 	}
 	updateCheck.Load()
 	if ShouldCheckForUpdates(updateCheck) {
-		log := log.New(os.Stderr, "", 0)
-		slug := "bitcart/bitcart-cli"
-		spr := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-		spr.Writer = os.Stderr
-		spr.Suffix = " Checking for updates..."
-		spr.Start()
-		check, err := CheckForUpdates(
-			ctx,
-			opts.GitHubAPI,
-			slug,
-			Version,
-		)
+		var check *Options
+		err := withSpinner(ctx, "Checking for updates...", func(ctx context.Context) error {
+			var err error
+			check, err = CheckForUpdates(ctx, opts.GitHubAPI, "bitcart/bitcart-cli", Version)
+			return err
+		})
 		if err != nil {
-			spr.Stop()
 			return err
 		}
-		if !check.Found {
-			spr.Suffix = "No updates found."
-			time.Sleep(300 * time.Millisecond)
-			spr.Stop()
-			updateCheck.LastUpdateCheck = time.Now()
-			updateCheck.WriteToDisk()
-			return nil
+		if check.Found && !IsLatestVersion(check) {
+			log := log.New(os.Stderr, "", 0)
+			log.Println(ReportVersion(check))
+			log.Println(HowToUpdate(check))
+			log.Println("") // Print a new-line after all of that
 		}
-		if IsLatestVersion(check) {
-			spr.Suffix = "Already up-to-date."
-			time.Sleep(300 * time.Millisecond)
-			spr.Stop()
-			updateCheck.LastUpdateCheck = time.Now()
-			updateCheck.WriteToDisk()
-			return nil
-		}
-		spr.Stop()
-		log.Println(ReportVersion(check))
-		log.Println(HowToUpdate(check))
-		log.Println("") // Print a new-line after all of that
 		updateCheck.LastUpdateCheck = time.Now()
 		updateCheck.WriteToDisk()
-		return nil
 	}
 	return nil
 }

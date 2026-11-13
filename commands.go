@@ -7,11 +7,9 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/huh/v2"
-	"github.com/briandowns/spinner"
 	"github.com/urfave/cli/v3"
 )
 
@@ -373,18 +371,12 @@ func packagePlugin(ctx context.Context, cmd *cli.Command) error {
 }
 
 func updateCLI(ctx context.Context, cmd *cli.Command) error {
-	slug := "bitcart/bitcart-cli"
-	spr := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	spr.Suffix = " Checking for updates..."
-	spr.Start()
-	check, err := CheckForUpdates(
-		ctx,
-		rootOptions.GitHubAPI,
-		slug,
-		Version,
-	)
-	spr.Stop()
-	checkErr(err)
+	var check *Options
+	checkErr(withSpinner(ctx, "Checking for updates...", func(ctx context.Context) error {
+		var err error
+		check, err = CheckForUpdates(ctx, rootOptions.GitHubAPI, "bitcart/bitcart-cli", Version)
+		return err
+	}))
 	if !check.Found {
 		fmt.Println("No updates found.")
 		return nil
@@ -398,11 +390,12 @@ func updateCLI(ctx context.Context, cmd *cli.Command) error {
 		fmt.Println(HowToUpdate(check))
 		return nil
 	}
-	spr.Suffix = " Installing update..."
-	spr.Restart()
-	message, err := InstallLatest(ctx, check)
-	spr.Stop()
-	checkErr(err)
+	var message string
+	checkErr(withSpinner(ctx, "Installing update...", func(ctx context.Context) error {
+		var err error
+		message, err = InstallLatest(ctx, check)
+		return err
+	}))
 	fmt.Println(message)
 	return nil
 }
