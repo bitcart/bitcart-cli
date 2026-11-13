@@ -80,7 +80,6 @@ signs:
       - "${artifact}"
       - "--yes"
     artifacts: checksum
-    output: true
 
 dockers_v2:
   - images:
@@ -101,7 +100,6 @@ dockers_v2:
 
 docker_signs:
   - cmd: cosign
-    output: true
     args:
       - "sign"
       - "${artifact}@${digest}"
