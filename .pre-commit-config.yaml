@@ -20,7 +20,7 @@ repos:
         name: golangci-lint
         language_version: go1.27
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.31.1
+    rev: v1.32.0
     hooks:
       - id: zizmor
         args: [--no-progress, --offline, --persona=auditor]
@@ -32,6 +32,6 @@ repos:
         language: node
         require_serial: true
         entry: oxfmt --no-error-on-unmatched-pattern
-        additional_dependencies: [oxfmt@0.75.0]
+        additional_dependencies: [oxfmt@0.78.0]
         exclude: >-
           ^plugin/.*.$
