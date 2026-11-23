@@ -32,6 +32,6 @@ repos:
         language: node
         require_serial: true
         entry: oxfmt --no-error-on-unmatched-pattern
-        additional_dependencies: [oxfmt@0.78.0]
+        additional_dependencies: [oxfmt@0.79.0]
         exclude: >-
           ^plugin/.*.$
